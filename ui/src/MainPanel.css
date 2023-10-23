@@ -1,0 +1,8 @@
+.MainPanel {
+    position: absolute;
+    left: 400px;
+    right: 0;
+    height: 100%;
+    background: linear-gradient(90deg, rgb(9 10 10) 0%, rgb(17 19 25) 100%);
+    box-shadow: inset 2px 0px 6px #00000078;
+}

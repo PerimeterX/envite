@@ -1,0 +1,39 @@
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&family=Roboto+Mono:ital,wght@0,200;0,400;0,700;1,200;1,400;1,700&display=swap');
+
+html, body, #root {
+    height: 100%;
+    font-family: 'Montserrat', sans-serif;
+}
+
+.App {
+    height: 100%;
+    position: relative;
+}
+
+header {
+    position: fixed;
+    height: 50px;
+    width: 100%;
+    background: linear-gradient(90deg, #2e3533 0%, #12251f 100%);
+    box-shadow: 0 2px 6px #0000002b;
+    z-index: 1;
+}
+
+header h1 {
+    margin: 5px 20px;
+    display: inline-block;
+    color: #545f5c;
+}
+
+header span {
+    font-size: 14px;
+    color: #545f5c;
+}
+
+main {
+    position: fixed;
+    top: 50px;
+    bottom: 0;
+    width: 100%;
+    display: flex;
+}
