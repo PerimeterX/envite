@@ -1,0 +1,46 @@
+.ComponentPanel {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.ComponentPanel .title {
+    display: flex;
+    justify-content: space-between;
+    color: #00ffbb;
+    background: linear-gradient(90deg, rgb(17 17 19) 0%, rgb(30 36 43) 20%, #1e2328 100%);
+    border-bottom: 1px solid #232323;
+}
+
+.ComponentPanel .actions {
+    padding: 15px;
+}
+
+.ComponentPanel .tab {
+    width: 160px;
+    color: #939393;
+    padding: 21px;
+}
+
+.ComponentPanel .component-title {
+    margin-bottom: 2px;
+}
+
+.ComponentPanel .status {
+    font-size: 10px;
+    margin-top: 10px;
+}
+
+.ComponentPanel .status.stopped {
+    color: #545454;
+}
+
+.ComponentPanel .content {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.ComponentPanel .tabs-content {
+    flex-grow: 1;
+}

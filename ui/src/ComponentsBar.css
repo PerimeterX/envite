@@ -1,0 +1,53 @@
+.ComponentsBar {
+    position: absolute;
+    left: 0;
+    width: 400px;
+    height: 100%;
+    background: linear-gradient(90deg, rgb(30 38 46) 0%, rgb(18 23 29) 100%);
+    color: #f0f0f0;
+}
+
+.components-bar-components {
+    top: -1px;
+    width: 100%;
+    bottom: 71px;
+    overflow-y: scroll;
+    position: absolute;
+    border-bottom: 1px solid #363636;
+    border-top: 1px solid #363636;
+}
+
+.components-bar-footer {
+    height: 71px;
+    width: 100%;
+    bottom: 0;
+    position: absolute;
+    padding: 19px 40px;
+    box-sizing: border-box;
+    background: #ffffff08;
+    display: flex;
+    justify-content: space-between;
+}
+
+.elapsed {
+    position: absolute;
+    font-size: 12px;
+    margin: -2px 0 0 35px;
+}
+
+.main-loader {
+    margin-top: 3px;
+    margin-left: 5px;
+}
+
+.view-log-holder {
+    margin-top: 3px;
+}
+
+.trail {
+    position: absolute;
+    height: 40px;
+    margin-left: 59px;
+    margin-top: -40px;
+    border-left: 2px dotted #545454;
+}
