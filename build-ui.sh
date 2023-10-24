@@ -12,3 +12,4 @@ fi
 npm --prefix ui run build
 
 go-bindata -o static_files.go -pkg fengshui -prefix ui/build -fs ui/build/...
+echo -e "//go:build !lean\n\n$(cat static_files.go)" > static_files.go
