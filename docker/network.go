@@ -6,7 +6,6 @@ import (
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/network"
 	"github.com/docker/go-connections/nat"
-	"github.com/sirupsen/logrus"
 	"runtime"
 	"strings"
 	"sync"
@@ -22,10 +21,8 @@ const (
 func ParseNetworkMode(value string) (NetworkMode, error) {
 	switch strings.ToLower(value) {
 	case "closed":
-		logrus.Infof("using closed network")
 		return NetworkModeClosed, nil
 	case "open", "":
-		logrus.Infof("using open network")
 		return NetworkModeOpen, nil
 	}
 	return "", ErrInvalidNetworkMode{v: value}
@@ -45,7 +42,6 @@ func validateNetworkMode(networkMode NetworkMode, config Config) (host string, e
 }
 
 func configureNetwork(networkMode NetworkMode, config Config, blueprintID string, runConfig *runConfig) {
-	logrus.Infof("configuring network mode %s for %s", networkMode, config.Name)
 	if networkMode == NetworkModeClosed {
 		configureClosedNetwork(blueprintID, runConfig)
 	} else if networkMode == NetworkModeOpen {
@@ -58,7 +54,6 @@ func configureNetwork(networkMode NetworkMode, config Config, blueprintID string
 }
 
 func configureClosedNetwork(blueprintID string, runConfig *runConfig) {
-	logrus.Infof("doing closed network")
 	runConfig.networkCreate = types.NetworkCreate{
 		CheckDuplicate: true,
 		Driver:         "bridge",
@@ -70,7 +65,6 @@ func configureClosedNetwork(blueprintID string, runConfig *runConfig) {
 }
 
 func configureOpenLinuxNetwork(blueprintID string, runConfig *runConfig) {
-	logrus.Infof("doing open linux network")
 	runConfig.networkCreate = types.NetworkCreate{
 		CheckDuplicate: true,
 		Driver:         "host",
@@ -82,7 +76,6 @@ func configureOpenLinuxNetwork(blueprintID string, runConfig *runConfig) {
 }
 
 func configureOpenNetwork(config Config, blueprintID string, runConfig *runConfig) {
-	logrus.Infof("doing open non-linux network")
 	runConfig.networkCreate = types.NetworkCreate{
 		CheckDuplicate: true,
 		Driver:         "bridge",
