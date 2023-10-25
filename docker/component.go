@@ -21,9 +21,7 @@ import (
 const ComponentType = "docker component"
 
 type Component struct {
-	Host          string
-	ContainerName string
-	Writer        *fengshui.Writer
+	Writer *fengshui.Writer
 
 	lock             sync.Mutex
 	blueprintID      string
@@ -32,6 +30,8 @@ type Component struct {
 	networkMode      NetworkMode
 	runConfig        *runConfig
 	latestLogMessage time.Time
+	host             string
+	containerName    string
 }
 
 func NewComponent(
@@ -58,8 +58,8 @@ func NewComponent(
 		blueprintID:   blueprintID,
 		networkMode:   networkMode,
 		runConfig:     runConf,
-		Host:          host,
-		ContainerName: containerName,
+		host:          host,
+		containerName: containerName,
 	}, nil
 }
 
@@ -157,7 +157,7 @@ func (c *Component) Start(ctx context.Context) error {
 		c.runConfig.hostConfig,
 		c.runConfig.networkingConfig,
 		c.runConfig.platformConfig,
-		c.ContainerName,
+		c.containerName,
 	)
 	if err == nil {
 		id = res.ID
@@ -291,14 +291,14 @@ func (c *Component) Exec(ctx context.Context, cmd []string) (int, error) {
 func (c *Component) findContainer(ctx context.Context) (*types.Container, error) {
 	containers, err := c.cli.ContainerList(ctx, types.ContainerListOptions{
 		All:     true,
-		Filters: filters.NewArgs(filters.Arg("name", c.ContainerName)),
+		Filters: filters.NewArgs(filters.Arg("name", c.containerName)),
 	})
 	if err != nil {
 		return nil, err
 	}
 
 	for _, co := range containers {
-		if len(co.Names) > 0 && co.Names[0][1:] == c.ContainerName {
+		if len(co.Names) > 0 && co.Names[0][1:] == c.containerName {
 			return &co, nil
 		}
 	}
@@ -352,6 +352,14 @@ func (c *Component) followLogs(id string) error {
 		_ = containerReader.Close()
 	}()
 	return nil
+}
+
+func (c *Component) Host() string {
+	return c.host
+}
+
+func (c *Component) ContainerName() string {
+	return c.containerName
 }
 
 func extractMessageTime(message string) (time.Time, string) {
