@@ -28,9 +28,9 @@ func ParseNetworkMode(value string) (NetworkMode, error) {
 	return "", ErrInvalidNetworkMode{v: value}
 }
 
-func validateNetworkMode(networkMode NetworkMode, config Config) (host string, err error) {
+func validateNetworkMode(networkMode NetworkMode, containerName string) (host string, err error) {
 	if networkMode == NetworkModeClosed {
-		return config.Name, nil
+		return containerName, nil
 	}
 	if networkMode == NetworkModeOpen {
 		if runtime.GOOS == "linux" {
