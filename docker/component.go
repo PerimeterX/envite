@@ -21,8 +21,9 @@ import (
 const ComponentType = "docker component"
 
 type Component struct {
-	Host   string
-	Writer *fengshui.Writer
+	Host          string
+	ContainerName string
+	Writer        *fengshui.Writer
 
 	lock             sync.Mutex
 	blueprintID      string
@@ -39,23 +40,26 @@ func NewComponent(
 	networkMode NetworkMode,
 	config Config,
 ) (*Component, error) {
-	host, err := validateNetworkMode(networkMode, config)
-	if err != nil {
-		return nil, err
-	}
-
 	runConf, err := config.validate(networkMode, blueprintID)
 	if err != nil {
 		return nil, err
 	}
 
+	containerName := fmt.Sprintf("%s_%s", blueprintID, config.Name)
+
+	host, err := validateNetworkMode(networkMode, containerName)
+	if err != nil {
+		return nil, err
+	}
+
 	return &Component{
-		cli:         cli,
-		config:      config,
-		blueprintID: blueprintID,
-		networkMode: networkMode,
-		runConfig:   runConf,
-		Host:        host,
+		cli:           cli,
+		config:        config,
+		blueprintID:   blueprintID,
+		networkMode:   networkMode,
+		runConfig:     runConf,
+		Host:          host,
+		ContainerName: containerName,
 	}, nil
 }
 
@@ -153,7 +157,7 @@ func (c *Component) Start(ctx context.Context) error {
 		c.runConfig.hostConfig,
 		c.runConfig.networkingConfig,
 		c.runConfig.platformConfig,
-		c.ContainerName(),
+		c.ContainerName,
 	)
 	if err == nil {
 		id = res.ID
@@ -284,22 +288,17 @@ func (c *Component) Exec(ctx context.Context, cmd []string) (int, error) {
 	return execResp.ExitCode, nil
 }
 
-func (c *Component) ContainerName() string {
-	return fmt.Sprintf("%s_%s", c.blueprintID, c.config.Name)
-}
-
 func (c *Component) findContainer(ctx context.Context) (*types.Container, error) {
-	name := c.ContainerName()
 	containers, err := c.cli.ContainerList(ctx, types.ContainerListOptions{
 		All:     true,
-		Filters: filters.NewArgs(filters.Arg("name", name)),
+		Filters: filters.NewArgs(filters.Arg("name", c.ContainerName)),
 	})
 	if err != nil {
 		return nil, err
 	}
 
 	for _, co := range containers {
-		if len(co.Names) > 0 && co.Names[0][1:] == name {
+		if len(co.Names) > 0 && co.Names[0][1:] == c.ContainerName {
 			return &co, nil
 		}
 	}
