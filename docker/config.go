@@ -570,15 +570,15 @@ func (s *StrSlice) UnmarshalYAML(value *yaml.Node) error {
 }
 
 type runConfig struct {
+	hostname         string
 	containerConfig  *container.Config
 	hostConfig       *container.HostConfig
 	networkingConfig *network.NetworkingConfig
 	platformConfig   *ocispec.Platform
-	networkCreate    types.NetworkCreate
 	waiters          []waiterFunc
 }
 
-func (c Config) validate(networkMode NetworkMode, blueprintID string) (*runConfig, error) {
+func (c Config) initialize() (*runConfig, error) {
 	if c.Name == "" {
 		return nil, ErrInvalidConfig{Property: "name", Msg: "cannot be empty"}
 	}
@@ -607,7 +607,6 @@ func (c Config) validate(networkMode NetworkMode, blueprintID string) (*runConfi
 		platformConfig:  c.PlatformConfig.build(),
 		waiters:         waiters,
 	}
-	configureNetwork(networkMode, c, blueprintID, result)
 
 	return result, nil
 }

@@ -27,27 +27,19 @@ type Component struct {
 	blueprintID      string
 	cli              *client.Client
 	config           Config
-	networkMode      NetworkMode
 	runConfig        *runConfig
+	network          *Network
 	latestLogMessage time.Time
-	host             string
 	containerName    string
 }
 
 func NewComponent(
 	cli *client.Client,
 	blueprintID string,
-	networkMode NetworkMode,
+	network *Network,
 	config Config,
 ) (*Component, error) {
-	runConf, err := config.validate(networkMode, blueprintID)
-	if err != nil {
-		return nil, err
-	}
-
-	containerName := fmt.Sprintf("%s_%s", blueprintID, config.Name)
-
-	host, err := validateNetworkMode(networkMode, containerName)
+	runConf, err := config.initialize()
 	if err != nil {
 		return nil, err
 	}
@@ -56,10 +48,9 @@ func NewComponent(
 		cli:           cli,
 		config:        config,
 		blueprintID:   blueprintID,
-		networkMode:   networkMode,
 		runConfig:     runConf,
-		host:          host,
-		containerName: containerName,
+		network:       network,
+		containerName: fmt.Sprintf("%s_%s", blueprintID, config.Name),
 	}, nil
 }
 
@@ -94,10 +85,7 @@ func (c *Component) Prepare(ctx context.Context) error {
 	c.lock.Lock()
 	defer c.lock.Unlock()
 
-	err := createNetwork(ctx, c)
-	if err != nil {
-		return err
-	}
+	c.network.configure(c.config, c.runConfig, c.containerName)
 
 	if c.config.ImagePullOptions != nil && c.config.ImagePullOptions.Disabled {
 		c.Writer.WriteString(fmt.Sprintf("image pull disabled"))
@@ -222,7 +210,7 @@ func (c *Component) Cleanup(ctx context.Context) error {
 		return nil
 	}
 
-	err = deleteNetwork(ctx, c)
+	err = c.network.delete(ctx, c)
 	if err != nil {
 		return err
 	}
@@ -355,7 +343,7 @@ func (c *Component) followLogs(id string) error {
 }
 
 func (c *Component) Host() string {
-	return c.host
+	return c.runConfig.hostname
 }
 
 func (c *Component) ContainerName() string {
