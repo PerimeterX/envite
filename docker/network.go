@@ -63,21 +63,9 @@ func newClosedNetwork(cli *client.Client, blueprintID, networkIdentifier string)
 	}, nil
 }
 
-func findNetwork(networks []types.NetworkResource, identifier string) (types.NetworkResource, error) {
-	for _, current := range networks {
-		if current.ID == identifier || current.Name == identifier {
-			return current, nil
-		}
-	}
-	return types.NetworkResource{}, ErrNetworkNotExist{network: identifier}
-}
-
 func newOpenLinuxNetwork(cli *client.Client, blueprintID string) (*Network, error) {
-	res, err := cli.NetworkCreate(context.Background(), blueprintID, types.NetworkCreate{
-		CheckDuplicate: true,
-		Driver:         "host",
-	})
-	if err != nil && !strings.Contains(err.Error(), "already exists") {
+	id, err := createNetworkIfNotExist(cli, blueprintID, "host")
+	if err != nil {
 		return nil, err
 	}
 
@@ -85,11 +73,11 @@ func newOpenLinuxNetwork(cli *client.Client, blueprintID string) (*Network, erro
 		Client:       cli,
 		BlueprintID:  blueprintID,
 		shouldDelete: true,
-		ID:           res.ID,
+		ID:           id,
 		configure: func(config Config, runConfig *runConfig, containerName string) {
 			runConfig.hostConfig.NetworkMode = "host"
 			runConfig.networkingConfig = &network.NetworkingConfig{
-				EndpointsConfig: map[string]*network.EndpointSettings{res.ID: {NetworkID: res.ID}},
+				EndpointsConfig: map[string]*network.EndpointSettings{id: {NetworkID: id}},
 			}
 			runConfig.hostname = "localhost"
 		},
@@ -97,11 +85,8 @@ func newOpenLinuxNetwork(cli *client.Client, blueprintID string) (*Network, erro
 }
 
 func newOpenNetwork(cli *client.Client, blueprintID string) (*Network, error) {
-	res, err := cli.NetworkCreate(context.Background(), blueprintID, types.NetworkCreate{
-		CheckDuplicate: true,
-		Driver:         "bridge",
-	})
-	if err != nil && !strings.Contains(err.Error(), "already exists") {
+	id, err := createNetworkIfNotExist(cli, blueprintID, "bridge")
+	if err != nil {
 		return nil, err
 	}
 
@@ -109,11 +94,11 @@ func newOpenNetwork(cli *client.Client, blueprintID string) (*Network, error) {
 		Client:       cli,
 		BlueprintID:  blueprintID,
 		shouldDelete: true,
-		ID:           res.ID,
+		ID:           id,
 		configure: func(config Config, runConfig *runConfig, containerName string) {
 			runConfig.hostConfig.NetworkMode = "bridge"
 			runConfig.networkingConfig = &network.NetworkingConfig{
-				EndpointsConfig: map[string]*network.EndpointSettings{res.ID: {NetworkID: res.ID}},
+				EndpointsConfig: map[string]*network.EndpointSettings{id: {NetworkID: id}},
 			}
 			runConfig.hostname = "host.docker.internal"
 			runConfig.containerConfig.ExposedPorts = nat.PortSet{}
@@ -148,6 +133,31 @@ func (n *Network) delete(ctx context.Context, c *Component) error {
 	}
 
 	return nil
+}
+
+func createNetworkIfNotExist(cli *client.Client, name, driver string) (string, error) {
+	res, err := cli.NetworkCreate(context.Background(), name, types.NetworkCreate{
+		CheckDuplicate: true,
+		Driver:         driver,
+	})
+	if err != nil {
+		if !strings.Contains(err.Error(), "already exists") {
+			return "", err
+		}
+
+		return name, nil
+	}
+
+	return res.ID, nil
+}
+
+func findNetwork(networks []types.NetworkResource, identifier string) (types.NetworkResource, error) {
+	for _, current := range networks {
+		if current.ID == identifier || current.Name == identifier {
+			return current, nil
+		}
+	}
+	return types.NetworkResource{}, ErrNetworkNotExist{network: identifier}
 }
 
 type ErrNetworkNotExist struct {
