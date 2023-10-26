@@ -260,7 +260,7 @@ func (b *Blueprint) prepare(ctx context.Context, enabledComponentIDs map[string]
 					return nil
 				}
 
-				b.logger(LogLevelInfo, fmt.Sprintf("preparing up %s", component.ID()))
+				b.logger(LogLevelInfo, fmt.Sprintf("preparing %s", component.ID()))
 				err = component.Prepare(ctx)
 				if err != nil {
 					return fmt.Errorf("could not prepare %s: %w", component.ID(), err)
