@@ -44,13 +44,16 @@ func newComponent(
 		return nil, err
 	}
 
+	containerName := fmt.Sprintf("%s_%s", blueprintID, config.Name)
+	network.configure(config, runConf, containerName)
+
 	return &Component{
 		cli:           cli,
 		config:        config,
 		blueprintID:   blueprintID,
 		runConfig:     runConf,
 		network:       network,
-		containerName: fmt.Sprintf("%s_%s", blueprintID, config.Name),
+		containerName: containerName,
 	}, nil
 }
 
@@ -84,8 +87,6 @@ func (c *Component) SetOutputWriter(ctx context.Context, writer *fengshui.Writer
 func (c *Component) Prepare(ctx context.Context) error {
 	c.lock.Lock()
 	defer c.lock.Unlock()
-
-	c.network.configure(c.config, c.runConfig, c.containerName)
 
 	if c.config.ImagePullOptions != nil && c.config.ImagePullOptions.Disabled {
 		c.Writer.WriteString(fmt.Sprintf("image pull disabled"))
