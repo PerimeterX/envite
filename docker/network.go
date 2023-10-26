@@ -14,11 +14,12 @@ import (
 )
 
 type Network struct {
+	Client      *client.Client
+	BlueprintID string
+	ID          string
+
 	lock         sync.Mutex
-	cli          *client.Client
-	blueprintID  string
 	shouldDelete bool
-	id           string
 	configure    func(config Config, runConfig *runConfig, containerName string)
 }
 
@@ -33,7 +34,7 @@ func NewNetwork(cli *client.Client, networkIdentifier, blueprintID string) (*Net
 }
 
 func (n *Network) NewComponent(config Config) (*Component, error) {
-	return newComponent(n.cli, n.blueprintID, n, config)
+	return newComponent(n.Client, n.BlueprintID, n, config)
 }
 
 func newClosedNetwork(cli *client.Client, blueprintID, networkIdentifier string) (*Network, error) {
@@ -48,10 +49,10 @@ func newClosedNetwork(cli *client.Client, blueprintID, networkIdentifier string)
 	}
 
 	return &Network{
-		cli:          cli,
-		blueprintID:  blueprintID,
+		Client:       cli,
+		BlueprintID:  blueprintID,
 		shouldDelete: false,
-		id:           nw.ID,
+		ID:           nw.ID,
 		configure: func(config Config, runConfig *runConfig, containerName string) {
 			runConfig.hostConfig.NetworkMode = container.NetworkMode(nw.Driver)
 			runConfig.networkingConfig = &network.NetworkingConfig{
@@ -81,10 +82,10 @@ func newOpenLinuxNetwork(cli *client.Client, blueprintID string) (*Network, erro
 	}
 
 	return &Network{
-		cli:          cli,
-		blueprintID:  blueprintID,
+		Client:       cli,
+		BlueprintID:  blueprintID,
 		shouldDelete: true,
-		id:           res.ID,
+		ID:           res.ID,
 		configure: func(config Config, runConfig *runConfig, containerName string) {
 			runConfig.hostConfig.NetworkMode = "host"
 			runConfig.networkingConfig = &network.NetworkingConfig{
@@ -105,10 +106,10 @@ func newOpenNetwork(cli *client.Client, blueprintID string) (*Network, error) {
 	}
 
 	return &Network{
-		cli:          cli,
-		blueprintID:  blueprintID,
+		Client:       cli,
+		BlueprintID:  blueprintID,
 		shouldDelete: true,
-		id:           res.ID,
+		ID:           res.ID,
 		configure: func(config Config, runConfig *runConfig, containerName string) {
 			runConfig.hostConfig.NetworkMode = "bridge"
 			runConfig.networkingConfig = &network.NetworkingConfig{
