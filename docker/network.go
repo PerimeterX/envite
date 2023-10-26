@@ -15,14 +15,16 @@ import (
 
 type Network struct {
 	lock         sync.Mutex
+	cli          *client.Client
+	blueprintID  string
 	shouldDelete bool
 	id           string
 	configure    func(config Config, runConfig *runConfig, containerName string)
 }
 
-func NewNetwork(cli *client.Client, network, blueprintID string) (*Network, error) {
-	if network != "" {
-		return newClosedNetwork(cli, network)
+func NewNetwork(cli *client.Client, networkIdentifier, blueprintID string) (*Network, error) {
+	if networkIdentifier != "" {
+		return newClosedNetwork(cli, blueprintID, networkIdentifier)
 	} else if runtime.GOOS == "linux" {
 		return newOpenLinuxNetwork(cli, blueprintID)
 	} else {
@@ -30,18 +32,24 @@ func NewNetwork(cli *client.Client, network, blueprintID string) (*Network, erro
 	}
 }
 
-func newClosedNetwork(cli *client.Client, net string) (*Network, error) {
+func (n *Network) NewComponent(config Config) (*Component, error) {
+	return newComponent(n.cli, n.blueprintID, n, config)
+}
+
+func newClosedNetwork(cli *client.Client, blueprintID, networkIdentifier string) (*Network, error) {
 	networks, err := cli.NetworkList(context.Background(), types.NetworkListOptions{})
 	if err != nil {
 		return nil, err
 	}
 
-	nw, err := findNetwork(networks, net)
+	nw, err := findNetwork(networks, networkIdentifier)
 	if err != nil {
 		return nil, err
 	}
 
 	return &Network{
+		cli:          cli,
+		blueprintID:  blueprintID,
 		shouldDelete: false,
 		id:           nw.ID,
 		configure: func(config Config, runConfig *runConfig, containerName string) {
@@ -54,13 +62,13 @@ func newClosedNetwork(cli *client.Client, net string) (*Network, error) {
 	}, nil
 }
 
-func findNetwork(networks []types.NetworkResource, network string) (types.NetworkResource, error) {
+func findNetwork(networks []types.NetworkResource, identifier string) (types.NetworkResource, error) {
 	for _, current := range networks {
-		if current.ID == network || current.Name == network {
+		if current.ID == identifier || current.Name == identifier {
 			return current, nil
 		}
 	}
-	return types.NetworkResource{}, ErrNetworkNotExist{network: network}
+	return types.NetworkResource{}, ErrNetworkNotExist{network: identifier}
 }
 
 func newOpenLinuxNetwork(cli *client.Client, blueprintID string) (*Network, error) {
@@ -73,6 +81,8 @@ func newOpenLinuxNetwork(cli *client.Client, blueprintID string) (*Network, erro
 	}
 
 	return &Network{
+		cli:          cli,
+		blueprintID:  blueprintID,
 		shouldDelete: true,
 		id:           res.ID,
 		configure: func(config Config, runConfig *runConfig, containerName string) {
@@ -95,6 +105,8 @@ func newOpenNetwork(cli *client.Client, blueprintID string) (*Network, error) {
 	}
 
 	return &Network{
+		cli:          cli,
+		blueprintID:  blueprintID,
 		shouldDelete: true,
 		id:           res.ID,
 		configure: func(config Config, runConfig *runConfig, containerName string) {
