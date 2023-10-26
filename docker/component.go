@@ -33,7 +33,7 @@ type Component struct {
 	containerName    string
 }
 
-func NewComponent(
+func newComponent(
 	cli *client.Client,
 	blueprintID string,
 	network *Network,
