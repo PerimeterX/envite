@@ -22,8 +22,9 @@ export interface Message {
 
 export interface ApiCall<T> {
     title: string;
-    durationMs: number;
     promise: Promise<T>;
+    start: Date;
+    end?: Date;
     cancel: () => void;
 }
 
@@ -31,14 +32,13 @@ export function getStatus(title: string): ApiCall<Status> {
     const cancelSource = axios.CancelToken.source();
     const result: ApiCall<Status> = {
         title,
-        durationMs: 0,
+        start: new Date(),
         promise: axios
             .get(BASE_URL + '/status', { cancelToken: cancelSource.token })
             .then((res) => res.data)
-            .finally(() => clearInterval(interval)),
+            .finally(() => (result.end = new Date())),
         cancel: () => cancelSource.cancel('call canceled')
     };
-    const interval = createInterval(result);
     return result;
 }
 
@@ -49,17 +49,16 @@ export function apply(
     const cancelSource = axios.CancelToken.source();
     const result: ApiCall<any> = {
         title,
-        durationMs: 0,
+        start: new Date(),
         promise: axios
             .post(
                 BASE_URL + '/apply',
                 { enabled_component_ids: enabledComponentIds },
                 { cancelToken: cancelSource.token }
             )
-            .finally(() => clearInterval(interval)),
+            .finally(() => (result.end = new Date())),
         cancel: () => cancelSource.cancel('call canceled')
     };
-    const interval = createInterval(result);
     return result;
 }
 
@@ -70,17 +69,16 @@ export function startComponent(
     const cancelSource = axios.CancelToken.source();
     const result: ApiCall<any> = {
         title,
-        durationMs: 0,
+        start: new Date(),
         promise: axios
             .post(
                 BASE_URL + '/start_component',
                 { component_id: componentId },
                 { cancelToken: cancelSource.token }
             )
-            .finally(() => clearInterval(interval)),
+            .finally(() => (result.end = new Date())),
         cancel: () => cancelSource.cancel('call canceled')
     };
-    const interval = createInterval(result);
     return result;
 }
 
@@ -91,17 +89,16 @@ export function stopComponent(
     const cancelSource = axios.CancelToken.source();
     const result: ApiCall<any> = {
         title,
-        durationMs: 0,
+        start: new Date(),
         promise: axios
             .post(
                 BASE_URL + '/stop_component',
                 { component_id: componentId },
                 { cancelToken: cancelSource.token }
             )
-            .finally(() => clearInterval(interval)),
+            .finally(() => (result.end = new Date())),
         cancel: () => cancelSource.cancel('call canceled')
     };
-    const interval = createInterval(result);
     return result;
 }
 
@@ -113,16 +110,15 @@ export function restartComponent(
     const canceler = { canceled: false, cancelSource };
     const result: ApiCall<any> = {
         title,
-        durationMs: 0,
-        promise: callRestart(componentId, canceler).finally(() =>
-            clearInterval(interval)
+        start: new Date(),
+        promise: callRestart(componentId, canceler).finally(
+            () => (result.end = new Date())
         ),
         cancel: () => {
             cancelSource.cancel('call canceled');
             canceler.canceled = true;
         }
     };
-    const interval = createInterval(result);
     return result;
 }
 
@@ -130,17 +126,16 @@ export function stopAll(title: string, cleanup: boolean): ApiCall<void> {
     const cancelSource = axios.CancelToken.source();
     const result: ApiCall<any> = {
         title,
-        durationMs: 0,
+        start: new Date(),
         promise: axios
             .post(
                 BASE_URL + '/stop_all',
                 { cleanup },
                 { cancelToken: cancelSource.token }
             )
-            .finally(() => clearInterval(interval)),
+            .finally(() => (result.end = new Date())),
         cancel: () => cancelSource.cancel('call canceled')
     };
-    const interval = createInterval(result);
     return result;
 }
 
@@ -180,10 +175,6 @@ export async function getOutput(
             onData(component, byComponent[component]);
         }
     }
-}
-
-function createInterval(apiCall: ApiCall<any>) {
-    return setInterval(() => (apiCall.durationMs += 10), 10);
 }
 
 interface Canceler {

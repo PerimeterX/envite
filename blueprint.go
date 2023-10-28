@@ -72,7 +72,13 @@ func (b *Blueprint) Apply(ctx context.Context, enabledComponentIDs []string) err
 	for _, id := range enabledComponentIDs {
 		enabledComponents[id] = struct{}{}
 	}
-	return b.apply(ctx, enabledComponents)
+	err := b.apply(ctx, enabledComponents)
+	if err != nil {
+		return err
+	}
+
+	b.logger(LogLevelInfo, "finished applying state")
+	return nil
 }
 
 func (b *Blueprint) StartAll(ctx context.Context) error {
@@ -81,7 +87,13 @@ func (b *Blueprint) StartAll(ctx context.Context) error {
 	for id := range b.componentsByID {
 		all[id] = struct{}{}
 	}
-	return b.apply(ctx, all)
+	err := b.apply(ctx, all)
+	if err != nil {
+		return err
+	}
+
+	b.logger(LogLevelInfo, "finished starting all")
+	return nil
 }
 
 func (b *Blueprint) StopAll(ctx context.Context) error {
@@ -107,6 +119,7 @@ func (b *Blueprint) StopAll(ctx context.Context) error {
 		}
 	}
 
+	b.logger(LogLevelInfo, "finished stopping all")
 	return nil
 }
 
@@ -132,7 +145,13 @@ func (b *Blueprint) StartComponent(ctx context.Context, componentID string) erro
 	}
 
 	b.logger(LogLevelInfo, fmt.Sprintf("starting %s", componentID))
-	return component.Start(ctx)
+	err = component.Start(ctx)
+	if err != nil {
+		return err
+	}
+
+	b.logger(LogLevelInfo, fmt.Sprintf("finished starting %s", componentID))
+	return nil
 }
 
 func (b *Blueprint) StopComponent(ctx context.Context, componentID string) error {
@@ -142,7 +161,13 @@ func (b *Blueprint) StopComponent(ctx context.Context, componentID string) error
 	}
 
 	b.logger(LogLevelInfo, fmt.Sprintf("stopping %s", componentID))
-	return component.Stop(ctx)
+	err = component.Stop(ctx)
+	if err != nil {
+		return err
+	}
+
+	b.logger(LogLevelInfo, fmt.Sprintf("finished stopping %s", componentID))
+	return nil
 }
 
 func (b *Blueprint) Status(ctx context.Context) (GetStatusResponse, error) {
@@ -188,7 +213,13 @@ func (b *Blueprint) Cleanup(ctx context.Context) error {
 			})
 		}
 	}
-	return g.Wait()
+	err := g.Wait()
+	if err != nil {
+		return err
+	}
+
+	b.logger(LogLevelInfo, "finished cleaning up")
+	return nil
 }
 
 func (b *Blueprint) apply(ctx context.Context, enabledComponentIDs map[string]struct{}) error {
@@ -219,6 +250,7 @@ func (b *Blueprint) apply(ctx context.Context, enabledComponentIDs map[string]st
 						return fmt.Errorf("could not start %s: %w", component.ID(), err)
 					}
 
+					b.logger(LogLevelInfo, fmt.Sprintf("finished starting %s", component.ID()))
 					return nil
 				})
 			} else {
@@ -229,6 +261,7 @@ func (b *Blueprint) apply(ctx context.Context, enabledComponentIDs map[string]st
 						return fmt.Errorf("could not stop %s: %w", component.ID(), err)
 					}
 
+					b.logger(LogLevelInfo, fmt.Sprintf("finished stopping %s", component.ID()))
 					return nil
 				})
 			}
@@ -266,6 +299,7 @@ func (b *Blueprint) prepare(ctx context.Context, enabledComponentIDs map[string]
 					return fmt.Errorf("could not prepare %s: %w", component.ID(), err)
 				}
 
+				b.logger(LogLevelInfo, fmt.Sprintf("finished preparing %s", component.ID()))
 				return nil
 			})
 		}
