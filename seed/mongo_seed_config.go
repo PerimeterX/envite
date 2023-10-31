@@ -5,7 +5,7 @@ type MongoSeedConfig struct {
 	ID string `json:"id,omitempty" yaml:"id,omitempty"`
 
 	// Data - a list of objects, each represents a single mongo collection and its data
-	Data []MongoCollectionData `json:"data,omitempty" yaml:"data,omitempty"`
+	Data []*MongoCollectionData `json:"data,omitempty" yaml:"data,omitempty"`
 }
 
 type MongoCollectionData struct {
