@@ -88,6 +88,12 @@ func (c *Component) Prepare(ctx context.Context) error {
 	c.lock.Lock()
 	defer c.lock.Unlock()
 
+	for _, mount := range c.config.Mounts {
+		if mount.OnMount != nil {
+			mount.OnMount()
+		}
+	}
+
 	if c.config.ImagePullOptions != nil && c.config.ImagePullOptions.Disabled {
 		c.Writer.WriteString(fmt.Sprintf("image pull disabled"))
 		return nil

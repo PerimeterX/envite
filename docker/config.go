@@ -493,6 +493,11 @@ type Mount struct {
 
 	// TmpfsOptions - used for https://github.com/moby/moby/blob/v24.0.6/api/types/mount/mount.go#L37
 	TmpfsOptions *TmpfsOptions `json:"tmpfs_options,omitempty" yaml:"tmpfs_options,omitempty"`
+
+	// OnMount - an optional function to be called before the mount is being created.
+	// this can be useful for lazy evaluation such as creating directories or resources only if needed.
+	// available only via code, not available in config files
+	OnMount func() `json:"-" yaml:"-"`
 }
 
 type BindOptions struct {
