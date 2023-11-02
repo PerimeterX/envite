@@ -23,7 +23,7 @@
   },
   "scripts": {
     "start": "REACT_APP_BASE_URL=http://localhost:4005 react-scripts start",
-    "build": "react-scripts build",
+    "build": "GENERATE_SOURCEMAP=false react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject",
     "format": "prettier --config .prettierrc 'src/**/*.ts|src/**/*.tsx' --write"

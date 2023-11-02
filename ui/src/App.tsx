@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import './App.css';
 import * as api from './api';
-import ComponentsBar, { formatElapsed } from './ComponentsBar';
+import ComponentsBar from './ComponentsBar';
 import { ApiCall, Message, Status } from './api';
 import {
     Alert,

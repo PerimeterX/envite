@@ -57,7 +57,7 @@ function ComponentPanel(props: ComponentPanelProps) {
                         <Tab
                             className="tab"
                             iconPosition="start"
-                            label="Info"
+                            label="Output"
                             value={`/${props.component.id}`}
                             to={`/${props.component.id}`}
                             component={NavLink}
@@ -65,9 +65,9 @@ function ComponentPanel(props: ComponentPanelProps) {
                         <Tab
                             className="tab"
                             iconPosition="start"
-                            label="Output"
-                            value={`/${props.component.id}/output`}
-                            to={`/${props.component.id}/output`}
+                            label="Info"
+                            value={`/${props.component.id}/info`}
+                            to={`/${props.component.id}/info`}
                             component={NavLink}
                         />
                         <Tab
@@ -130,18 +130,18 @@ function ComponentPanel(props: ComponentPanelProps) {
                         <Route
                             path={`/`}
                             element={
-                                <ComponentInfo info={props.component.info} />
-                            }
-                        />
-                        <Route
-                            path={`/output`}
-                            element={
                                 <ComponentOutput
                                     component={props.component}
                                     data={props.data}
                                     title={<div />}
                                     clear={props.clear}
                                 />
+                            }
+                        />
+                        <Route
+                            path={`/info`}
+                            element={
+                                <ComponentInfo info={props.component.info} />
                             }
                         />
                         <Route

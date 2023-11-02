@@ -493,6 +493,11 @@ type Mount struct {
 
 	// TmpfsOptions - used for https://github.com/moby/moby/blob/v24.0.6/api/types/mount/mount.go#L37
 	TmpfsOptions *TmpfsOptions `json:"tmpfs_options,omitempty" yaml:"tmpfs_options,omitempty"`
+
+	// OnMount - an optional function to be called before the mount is being created.
+	// this can be useful for lazy evaluation such as creating directories or resources only if needed.
+	// available only via code, not available in config files
+	OnMount func() `json:"-" yaml:"-"`
 }
 
 type BindOptions struct {
@@ -570,15 +575,15 @@ func (s *StrSlice) UnmarshalYAML(value *yaml.Node) error {
 }
 
 type runConfig struct {
+	hostname         string
 	containerConfig  *container.Config
 	hostConfig       *container.HostConfig
 	networkingConfig *network.NetworkingConfig
 	platformConfig   *ocispec.Platform
-	networkCreate    types.NetworkCreate
 	waiters          []waiterFunc
 }
 
-func (c Config) validate(networkMode NetworkMode, blueprintID string) (*runConfig, error) {
+func (c Config) initialize() (*runConfig, error) {
 	if c.Name == "" {
 		return nil, ErrInvalidConfig{Property: "name", Msg: "cannot be empty"}
 	}
@@ -607,7 +612,6 @@ func (c Config) validate(networkMode NetworkMode, blueprintID string) (*runConfi
 		platformConfig:  c.PlatformConfig.build(),
 		waiters:         waiters,
 	}
-	configureNetwork(networkMode, c, blueprintID, result)
 
 	return result, nil
 }

@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React from 'react';
 import './ApiLogDialog.css';
 import { ApiCall } from './api';
 import {
@@ -96,12 +96,12 @@ function ApiLogDialog(props: ApiLogDialogProps) {
 }
 
 export function formatApiSuccess(call: ApiCall<any>) {
-    const duration = formatElapsed(call.durationMs);
+    const duration = formatElapsed(call);
     return `${call.title} finished after ${duration}`;
 }
 
 export function formatApiFailure(call: ApiCall<any>, err: string) {
-    const duration = formatElapsed(call.durationMs);
+    const duration = formatElapsed(call);
     return `${call.title} failed after ${duration} due to: ${err}`;
 }
 

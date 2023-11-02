@@ -121,11 +121,8 @@ As mentioned earlier, if you need 50 components up and running to run your tests
 feasible. You will have to use multiple remote machines for that. If this is your use case, an interesting company
 that does it well is [Raftt](https://www.raftt.io/) and I suggest reading more about what they do.
 
-## How To Build
+## Local Development
 
 To locally work on the UI, cd into the `ui` dir and run react dev server using `npm start`.
-To build static UI files:
-- cd into the `ui` dir and run `npm run build`
-- run `go-bindata -o static_files.go -pkg fengshui -prefix ui/build -fs ui/build/...`
 
-To install `go-bindata`, run `go install github.com/go-bindata/go-bindata/v3/go-bindata@v3.1.3`
+To build the UI into shipped static files run `./build-ui.sh`.
