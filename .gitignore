@@ -1,13 +1,7 @@
-### ui
-
-# dependencies
+# ui
 /ui/node_modules
-/ui/.pnp
-/ui.pnp.js
-
-# testing
-/ui/coverage
 /ui/.idea
+/ui/build
 
 # misc
 .DS_Store

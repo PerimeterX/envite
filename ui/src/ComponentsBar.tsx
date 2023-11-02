@@ -45,9 +45,7 @@ function ComponentsBar(props: ComponentsBarProps) {
                 return;
             }
 
-            elapsedRef.current.innerText = formatElapsed(
-                props.apiCall?.durationMs
-            );
+            elapsedRef.current.innerText = formatElapsed(props.apiCall);
         }, 100);
 
         return () => clearInterval(interval);
@@ -197,10 +195,13 @@ function ComponentsBar(props: ComponentsBarProps) {
     );
 }
 
-export function formatElapsed(elapsedMs?: number) {
-    if (!elapsedMs) {
+export function formatElapsed(apiCall: ApiCall<any> | null) {
+    if (!apiCall) {
         return '0';
     }
+
+    const end = apiCall.end || new Date();
+    const elapsedMs = end.getTime() - apiCall.start.getTime();
 
     const secondsTotal = Math.floor(elapsedMs / 1000);
 

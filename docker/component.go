@@ -21,41 +21,39 @@ import (
 const ComponentType = "docker component"
 
 type Component struct {
-	Host   string
 	Writer *fengshui.Writer
 
 	lock             sync.Mutex
 	blueprintID      string
 	cli              *client.Client
 	config           Config
-	networkMode      NetworkMode
 	runConfig        *runConfig
+	network          *Network
 	latestLogMessage time.Time
+	containerName    string
 }
 
-func NewComponent(
+func newComponent(
 	cli *client.Client,
 	blueprintID string,
-	networkMode NetworkMode,
+	network *Network,
 	config Config,
 ) (*Component, error) {
-	host, err := validateNetworkMode(networkMode, config)
+	runConf, err := config.initialize()
 	if err != nil {
 		return nil, err
 	}
 
-	runConf, err := config.validate(networkMode, blueprintID)
-	if err != nil {
-		return nil, err
-	}
+	containerName := fmt.Sprintf("%s_%s", blueprintID, config.Name)
+	network.configure(config, runConf, containerName)
 
 	return &Component{
-		cli:         cli,
-		config:      config,
-		blueprintID: blueprintID,
-		networkMode: networkMode,
-		runConfig:   runConf,
-		Host:        host,
+		cli:           cli,
+		config:        config,
+		blueprintID:   blueprintID,
+		runConfig:     runConf,
+		network:       network,
+		containerName: containerName,
 	}, nil
 }
 
@@ -90,9 +88,10 @@ func (c *Component) Prepare(ctx context.Context) error {
 	c.lock.Lock()
 	defer c.lock.Unlock()
 
-	err := createNetwork(ctx, c)
-	if err != nil {
-		return err
+	for _, mount := range c.config.Mounts {
+		if mount.OnMount != nil {
+			mount.OnMount()
+		}
 	}
 
 	if c.config.ImagePullOptions != nil && c.config.ImagePullOptions.Disabled {
@@ -153,7 +152,7 @@ func (c *Component) Start(ctx context.Context) error {
 		c.runConfig.hostConfig,
 		c.runConfig.networkingConfig,
 		c.runConfig.platformConfig,
-		c.ContainerName(),
+		c.containerName,
 	)
 	if err == nil {
 		id = res.ID
@@ -218,7 +217,7 @@ func (c *Component) Cleanup(ctx context.Context) error {
 		return nil
 	}
 
-	err = deleteNetwork(ctx, c)
+	err = c.network.delete(ctx, c)
 	if err != nil {
 		return err
 	}
@@ -284,22 +283,17 @@ func (c *Component) Exec(ctx context.Context, cmd []string) (int, error) {
 	return execResp.ExitCode, nil
 }
 
-func (c *Component) ContainerName() string {
-	return fmt.Sprintf("%s_%s", c.blueprintID, c.config.Name)
-}
-
 func (c *Component) findContainer(ctx context.Context) (*types.Container, error) {
-	name := c.ContainerName()
 	containers, err := c.cli.ContainerList(ctx, types.ContainerListOptions{
 		All:     true,
-		Filters: filters.NewArgs(filters.Arg("name", name)),
+		Filters: filters.NewArgs(filters.Arg("name", c.containerName)),
 	})
 	if err != nil {
 		return nil, err
 	}
 
 	for _, co := range containers {
-		if len(co.Names) > 0 && co.Names[0][1:] == name {
+		if len(co.Names) > 0 && co.Names[0][1:] == c.containerName {
 			return &co, nil
 		}
 	}
@@ -353,6 +347,14 @@ func (c *Component) followLogs(id string) error {
 		_ = containerReader.Close()
 	}()
 	return nil
+}
+
+func (c *Component) Host() string {
+	return c.runConfig.hostname
+}
+
+func (c *Component) ContainerName() string {
+	return c.containerName
 }
 
 func extractMessageTime(message string) (time.Time, string) {
