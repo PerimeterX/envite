@@ -1,14 +1,14 @@
-package seed
+package mongo
 
-type MongoSeedConfig struct {
+type SeedConfig struct {
 	// ID - a unique component name
 	ID string `json:"id,omitempty" yaml:"id,omitempty"`
 
 	// Data - a list of objects, each represents a single mongo collection and its data
-	Data []*MongoCollectionData `json:"data,omitempty" yaml:"data,omitempty"`
+	Data []*SeedCollectionData `json:"data,omitempty" yaml:"data,omitempty"`
 }
 
-type MongoCollectionData struct {
+type SeedCollectionData struct {
 	// DB - the name of the target mongo DB
 	DB string `json:"db,omitempty" yaml:"db,omitempty"`
 

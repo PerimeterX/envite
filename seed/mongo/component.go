@@ -1,4 +1,4 @@
-package seed
+package mongo
 
 import (
 	"context"
@@ -10,19 +10,19 @@ import (
 	"sync/atomic"
 )
 
-type MongoSeedComponent struct {
+type SeedComponent struct {
 	lock           sync.Mutex
 	clientProvider func() (*mongo.Client, error)
-	config         MongoSeedConfig
+	config         SeedConfig
 	status         atomic.Value
 	writer         *fengshui.Writer
 }
 
-func NewMongoSeedComponent(
+func NewSeedComponent(
 	clientProvider func() (*mongo.Client, error),
-	config MongoSeedConfig,
-) *MongoSeedComponent {
-	m := &MongoSeedComponent{
+	config SeedConfig,
+) *SeedComponent {
+	m := &SeedComponent{
 		clientProvider: clientProvider,
 		config:         config,
 	}
@@ -32,24 +32,24 @@ func NewMongoSeedComponent(
 	return m
 }
 
-func (m *MongoSeedComponent) ID() string {
+func (m *SeedComponent) ID() string {
 	return m.config.ID
 }
 
-func (m *MongoSeedComponent) Type() string {
+func (m *SeedComponent) Type() string {
 	return "mongo seed"
 }
 
-func (m *MongoSeedComponent) SetOutputWriter(_ context.Context, writer *fengshui.Writer) error {
+func (m *SeedComponent) SetOutputWriter(_ context.Context, writer *fengshui.Writer) error {
 	m.writer = writer
 	return nil
 }
 
-func (m *MongoSeedComponent) Prepare(context.Context) error {
+func (m *SeedComponent) Prepare(context.Context) error {
 	return nil
 }
 
-func (m *MongoSeedComponent) Start(ctx context.Context) error {
+func (m *SeedComponent) Start(ctx context.Context) error {
 	m.lock.Lock()
 	defer m.lock.Unlock()
 
@@ -89,22 +89,22 @@ func (m *MongoSeedComponent) Start(ctx context.Context) error {
 	return nil
 }
 
-func (m *MongoSeedComponent) Stop(context.Context) error {
+func (m *SeedComponent) Stop(context.Context) error {
 	return nil
 }
 
-func (m *MongoSeedComponent) Cleanup(context.Context) error {
+func (m *SeedComponent) Cleanup(context.Context) error {
 	return nil
 }
 
-func (m *MongoSeedComponent) Status(context.Context) (fengshui.ComponentStatus, error) {
+func (m *SeedComponent) Status(context.Context) (fengshui.ComponentStatus, error) {
 	return m.status.Load().(fengshui.ComponentStatus), nil
 }
 
-func (m *MongoSeedComponent) Config() any {
+func (m *SeedComponent) Config() any {
 	return m.config
 }
 
-func (m *MongoSeedComponent) EnvVars() map[string]string {
+func (m *SeedComponent) EnvVars() map[string]string {
 	return nil
 }
