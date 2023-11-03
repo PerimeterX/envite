@@ -44,7 +44,7 @@ function useRouteMatch(patterns: readonly string[]) {
 function ComponentPanel(props: ComponentPanelProps) {
     const navigate = useNavigate();
     const routeMatch = useRouteMatch([
-        `/${props.component.id}/output`,
+        `/${props.component.id}/info`,
         `/${props.component.id}/env`,
         `/${props.component.id}`
     ]);
