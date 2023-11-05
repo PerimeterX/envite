@@ -13,7 +13,7 @@ function ComponentTitle(props: ComponentTitleProps) {
     return (
         <div className="ComponentTitle">
             <NavLink
-                to={`${props.component.id}/output`}
+                to={`${props.component.id}`}
                 className="component-title-link"
             >
                 <div className="component-title">{props.component.id}</div>
