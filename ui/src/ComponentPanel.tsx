@@ -86,7 +86,10 @@ function ComponentPanel(props: ComponentPanelProps) {
                             props.loading ||
                             props.component.status !== 'running'
                         }
-                        onClick={props.restartComponent}
+                        onClick={() => {
+                            navigate(`/${props.component.id}`);
+                            props.restartComponent();
+                        }}
                         size="small"
                         variant="outlined"
                         style={{ marginRight: 15 }}
@@ -113,7 +116,7 @@ function ComponentPanel(props: ComponentPanelProps) {
                             props.component.status === 'running'
                         }
                         onClick={() => {
-                            navigate(`/${props.component.id}/output`);
+                            navigate(`/${props.component.id}`);
                             props.startComponent();
                         }}
                         size="small"
