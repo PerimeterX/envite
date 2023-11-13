@@ -21,6 +21,8 @@ type ComponentStatus string
 
 const (
 	ComponentStatusStopped  ComponentStatus = "stopped"
+	ComponentStatusFailed   ComponentStatus = "failed"
+	ComponentStatusStarting ComponentStatus = "starting"
 	ComponentStatusRunning  ComponentStatus = "running"
 	ComponentStatusFinished ComponentStatus = "finished"
 )

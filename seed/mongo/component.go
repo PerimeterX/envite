@@ -10,6 +10,8 @@ import (
 	"sync/atomic"
 )
 
+const ComponentType = "mongo seed"
+
 type SeedComponent struct {
 	lock           sync.Mutex
 	clientProvider func() (*mongo.Client, error)
@@ -37,7 +39,7 @@ func (m *SeedComponent) ID() string {
 }
 
 func (m *SeedComponent) Type() string {
-	return "mongo seed"
+	return ComponentType
 }
 
 func (m *SeedComponent) SetOutputWriter(_ context.Context, writer *fengshui.Writer) error {
@@ -53,6 +55,20 @@ func (m *SeedComponent) Start(ctx context.Context) error {
 	m.lock.Lock()
 	defer m.lock.Unlock()
 
+	m.status.Store(fengshui.ComponentStatusStarting)
+
+	err := m.seed(ctx)
+	if err != nil {
+		m.status.Store(fengshui.ComponentStatusFailed)
+		return err
+	}
+
+	m.status.Store(fengshui.ComponentStatusFinished)
+
+	return nil
+}
+
+func (m *SeedComponent) seed(ctx context.Context) error {
 	m.writer.WriteString(fmt.Sprintf("starting mongo seed %s", m.config.ID))
 	client, err := m.clientProvider()
 	if err != nil {
@@ -83,13 +99,11 @@ func (m *SeedComponent) Start(ctx context.Context) error {
 			m.writer.Color.Cyan(collectionData.Collection),
 		))
 	}
-
-	m.status.Store(fengshui.ComponentStatusFinished)
-
 	return nil
 }
 
 func (m *SeedComponent) Stop(context.Context) error {
+	m.status.Store(fengshui.ComponentStatusStopped)
 	return nil
 }
 

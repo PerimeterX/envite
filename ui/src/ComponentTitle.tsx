@@ -21,7 +21,12 @@ function ComponentTitle(props: ComponentTitleProps) {
             <div>
                 <span
                     className={`status ${
-                        props.component.status === 'stopped' ? 'stopped' : ''
+                        props.component.status === 'stopped' ||
+                        props.component.status === 'starting'
+                            ? 'idle'
+                            : props.component.status === 'failed'
+                            ? 'failed'
+                            : ''
                     }`}
                 >
                     {props.component.status}&nbsp;

@@ -134,7 +134,7 @@ func (b *Blueprint) StartComponent(ctx context.Context, componentID string) erro
 		return err
 	}
 
-	if status == ComponentStatusRunning {
+	if status == ComponentStatusRunning || status == ComponentStatusStarting {
 		return nil
 	}
 
@@ -240,7 +240,7 @@ func (b *Blueprint) apply(ctx context.Context, enabledComponentIDs map[string]st
 						return fmt.Errorf("could not get status for %s: %w", component.ID(), err)
 					}
 
-					if status != ComponentStatusStopped {
+					if status == ComponentStatusRunning || status == ComponentStatusStarting {
 						return nil
 					}
 
@@ -289,7 +289,7 @@ func (b *Blueprint) prepare(ctx context.Context, enabledComponentIDs map[string]
 					return fmt.Errorf("could not get status for %s: %w", component.ID(), err)
 				}
 
-				if status == ComponentStatusRunning {
+				if status == ComponentStatusRunning || status == ComponentStatusStarting {
 					return nil
 				}
 
