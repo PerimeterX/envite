@@ -16,8 +16,12 @@
     margin-top: 10px;
 }
 
-.ComponentTitle .status.stopped {
+.ComponentTitle .status.idle {
     color: #545454;
+}
+
+.ComponentTitle .status.failed {
+    color: rgb(190 86 86);
 }
 
 .ComponentTitle .icon {

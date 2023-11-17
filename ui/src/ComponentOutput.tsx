@@ -17,6 +17,7 @@ interface ComponentOutputProps {
     component: Component;
     data: Message[] | undefined;
     clear: () => void;
+    scrolling: boolean;
 }
 
 function ComponentOutput(props: ComponentOutputProps) {
@@ -122,7 +123,9 @@ function ComponentOutput(props: ComponentOutputProps) {
                 </div>
             </div>
             <pre
-                className="component-output-content"
+                className={`component-output-content ${
+                    props.scrolling ? 'scrolling' : ''
+                }`}
                 ref={codeRef}
                 onScroll={(e) => {
                     if (

@@ -181,7 +181,7 @@ func (g getOutputHandler) ServeHTTP(writer http.ResponseWriter, request *http.Re
 			_, err := writer.Write(data)
 			if err != nil {
 				if !errors.Is(err, context.Canceled) {
-					g.blueprint.logger(LogLevelError, fmt.Sprintf("could not write output stream response: %v", err))
+					g.blueprint.Logger(LogLevelError, fmt.Sprintf("could not write output stream response: %v", err))
 				}
 				continue
 			}
@@ -192,7 +192,7 @@ func (g getOutputHandler) ServeHTTP(writer http.ResponseWriter, request *http.Re
 			err := reader.Close()
 			if err != nil {
 				if !errors.Is(err, context.Canceled) {
-					g.blueprint.logger(LogLevelError, fmt.Sprintf("could not close output reader: %v", err))
+					g.blueprint.Logger(LogLevelError, fmt.Sprintf("could not close output reader: %v", err))
 				}
 			}
 			return
@@ -230,7 +230,7 @@ type apiErrorResponse struct {
 
 func apiError(b *Blueprint, writer http.ResponseWriter, error string, status int) {
 	if status >= 500 && !strings.Contains(error, "context canceled") {
-		b.logger(LogLevelError, fmt.Sprintf("failed to serve request with status %d: %s", status, error))
+		b.Logger(LogLevelError, fmt.Sprintf("failed to serve request with status %d: %s", status, error))
 	}
 	writer.Header().Set(accessControl, accessControlValue)
 	writer.Header().Set(contentType, applicationJSON)
@@ -239,14 +239,14 @@ func apiError(b *Blueprint, writer http.ResponseWriter, error string, status int
 	response := apiErrorResponse{Error: error}
 	data, err := json.Marshal(response)
 	if err != nil {
-		b.logger(LogLevelError, fmt.Sprintf("could not marshal fail response: %v", err))
+		b.Logger(LogLevelError, fmt.Sprintf("could not marshal fail response: %v", err))
 		return
 	}
 
 	_, err = writer.Write(data)
 	if err != nil {
 		if !errors.Is(err, context.Canceled) {
-			b.logger(LogLevelError, fmt.Sprintf("could not write fail response: %v", err))
+			b.Logger(LogLevelError, fmt.Sprintf("could not write fail response: %v", err))
 		}
 	}
 }
@@ -274,7 +274,7 @@ func apiSuccess(b *Blueprint, writer http.ResponseWriter, body any, status int) 
 	writer.WriteHeader(status)
 	_, err := writer.Write(data)
 	if err != nil {
-		b.logger(LogLevelError, fmt.Sprintf("could not write successful response: %v", err))
+		b.Logger(LogLevelError, fmt.Sprintf("could not write successful response: %v", err))
 	}
 }
 

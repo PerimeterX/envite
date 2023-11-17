@@ -15,14 +15,13 @@ import (
 	"math"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 )
 
 const ComponentType = "docker component"
 
 type Component struct {
-	Writer *fengshui.Writer
-
 	lock             sync.Mutex
 	blueprintID      string
 	cli              *client.Client
@@ -31,6 +30,9 @@ type Component struct {
 	network          *Network
 	latestLogMessage time.Time
 	containerName    string
+	status           atomic.Value
+	blueprint        *fengshui.Blueprint
+	writer           *fengshui.Writer
 }
 
 func newComponent(
@@ -47,14 +49,18 @@ func newComponent(
 	containerName := fmt.Sprintf("%s_%s", blueprintID, config.Name)
 	network.configure(config, runConf, containerName)
 
-	return &Component{
+	c := &Component{
 		cli:           cli,
 		config:        config,
 		blueprintID:   blueprintID,
 		runConfig:     runConf,
 		network:       network,
 		containerName: containerName,
-	}, nil
+	}
+
+	c.status.Store(fengshui.ComponentStatusStopped)
+
+	return c, nil
 }
 
 func (c *Component) ID() string {
@@ -65,8 +71,9 @@ func (c *Component) Type() string {
 	return ComponentType
 }
 
-func (c *Component) SetOutputWriter(ctx context.Context, writer *fengshui.Writer) error {
-	c.Writer = writer
+func (c *Component) AttachBlueprint(ctx context.Context, blueprint *fengshui.Blueprint, writer *fengshui.Writer) error {
+	c.blueprint = blueprint
+	c.writer = writer
 
 	cont, err := c.findContainer(ctx)
 	if err != nil {
@@ -76,10 +83,8 @@ func (c *Component) SetOutputWriter(ctx context.Context, writer *fengshui.Writer
 		return nil
 	}
 
-	err = c.followLogs(cont.ID)
-	if err != nil {
-		return err
-	}
+	go c.writeLogs(cont.ID)
+	go c.monitorStartingStatus(cont.ID, false)
 
 	return nil
 }
@@ -95,7 +100,7 @@ func (c *Component) Prepare(ctx context.Context) error {
 	}
 
 	if c.config.ImagePullOptions != nil && c.config.ImagePullOptions.Disabled {
-		c.Writer.WriteString(fmt.Sprintf("image pull disabled"))
+		c.Writer().WriteString(fmt.Sprintf("image pull disabled"))
 		return nil
 	}
 
@@ -120,18 +125,18 @@ func (c *Component) Prepare(ctx context.Context) error {
 
 		if msg.Progress == nil || msg.Progress.Total == 0 {
 			if msg.ID == "" {
-				c.Writer.WriteString(msg.Status)
+				c.Writer().WriteString(msg.Status)
 			} else {
-				c.Writer.WriteString(fmt.Sprintf(
+				c.Writer().WriteString(fmt.Sprintf(
 					"%s %s",
-					c.Writer.Color.Cyan(msg.ID),
+					c.Writer().Color.Cyan(msg.ID),
 					msg.Status,
 				))
 			}
 		} else {
-			c.Writer.WriteString(fmt.Sprintf(
+			c.Writer().WriteString(fmt.Sprintf(
 				"%s %s %d%%",
-				c.Writer.Color.Cyan(msg.ID),
+				c.Writer().Color.Cyan(msg.ID),
 				msg.Status,
 				int(math.Ceil(float64(msg.Progress.Current)/float64(msg.Progress.Total)*100)),
 			))
@@ -142,6 +147,16 @@ func (c *Component) Prepare(ctx context.Context) error {
 }
 
 func (c *Component) Start(ctx context.Context) error {
+	id, err := c.startContainer(ctx)
+	if err != nil {
+		return err
+	}
+
+	c.monitorStartingStatus(id, true)
+	return nil
+}
+
+func (c *Component) startContainer(ctx context.Context) (string, error) {
 	c.lock.Lock()
 	defer c.lock.Unlock()
 
@@ -157,34 +172,23 @@ func (c *Component) Start(ctx context.Context) error {
 	if err == nil {
 		id = res.ID
 	} else if !errdefs.IsConflict(err) {
-		return err
+		return "", err
 	} else {
 		cont, err := c.findContainer(ctx)
 		if err != nil {
-			return err
+			return "", err
 		}
 
 		id = cont.ID
 	}
 
-	err = c.cli.ContainerStart(ctx, id, types.ContainerStartOptions{})
+	err = c.cli.ContainerStart(context.Background(), id, types.ContainerStartOptions{})
 	if err != nil {
-		return err
+		return "", err
 	}
 
-	err = c.followLogs(id)
-	if err != nil {
-		return err
-	}
-
-	for _, waiter := range c.runConfig.waiters {
-		err = waiter(c.cli, id)
-		if err != nil {
-			return err
-		}
-	}
-
-	return nil
+	go c.writeLogs(id)
+	return id, nil
 }
 
 func (c *Component) Stop(ctx context.Context) error {
@@ -200,7 +204,13 @@ func (c *Component) Stop(ctx context.Context) error {
 		return nil
 	}
 
-	return c.cli.ContainerRemove(ctx, cont.ID, types.ContainerRemoveOptions{Force: true})
+	err = c.cli.ContainerRemove(ctx, cont.ID, types.ContainerRemoveOptions{Force: true})
+	if err != nil {
+		return err
+	}
+
+	c.status.Store(fengshui.ComponentStatusStopped)
+	return nil
 }
 
 func (c *Component) Cleanup(ctx context.Context) error {
@@ -208,7 +218,7 @@ func (c *Component) Cleanup(ctx context.Context) error {
 	defer c.lock.Unlock()
 
 	if c.config.ImagePullOptions != nil && c.config.ImagePullOptions.Disabled {
-		c.Writer.WriteString(fmt.Sprintf("image remove disabled"))
+		c.Writer().WriteString(fmt.Sprintf("image remove disabled"))
 		return nil
 	}
 
@@ -224,17 +234,40 @@ func (c *Component) Cleanup(ctx context.Context) error {
 	return err
 }
 
-func (c *Component) Status(ctx context.Context) (fengshui.ComponentStatus, error) {
-	cont, err := c.findContainer(ctx)
-	if err != nil {
-		return "", err
+func (c *Component) Status(context.Context) (fengshui.ComponentStatus, error) {
+	status := c.status.Load().(fengshui.ComponentStatus)
+
+	if status == fengshui.ComponentStatusRunning {
+		// check if container stopped
+		cont, err := c.findContainer(context.Background())
+		if err != nil {
+			return "", err
+		}
+
+		if cont == nil || cont.State != "running" {
+			status = fengshui.ComponentStatusStopped
+			c.status.Store(fengshui.ComponentStatusStopped)
+		}
 	}
 
-	if cont != nil && cont.State == "running" {
-		return fengshui.ComponentStatusRunning, nil
-	}
+	return status, nil
+}
 
-	return fengshui.ComponentStatusStopped, nil
+func (c *Component) monitorStartingStatus(containerID string, isNewContainer bool) {
+	c.status.Store(fengshui.ComponentStatusStarting)
+	for _, waiter := range c.runConfig.waiters {
+		err := waiter(context.Background(), c.cli, containerID, isNewContainer)
+		if err != nil {
+			// container might have been manually stopped while we waited
+			c.lock.Lock()
+			if c.status.Load() == fengshui.ComponentStatusStarting {
+				c.status.Store(fengshui.ComponentStatusFailed)
+			}
+			c.lock.Unlock()
+			return
+		}
+	}
+	c.status.Store(fengshui.ComponentStatusRunning)
 }
 
 func (c *Component) Config() any {
@@ -251,7 +284,7 @@ func (c *Component) Exec(ctx context.Context, cmd []string) (int, error) {
 		return 0, err
 	}
 
-	c.Writer.WriteString(c.Writer.Color.Cyan(fmt.Sprintf("executing: %s", strings.Join(cmd, " "))))
+	c.Writer().WriteString(c.Writer().Color.Cyan(fmt.Sprintf("executing: %s", strings.Join(cmd, " "))))
 	response, err := c.cli.ContainerExecCreate(ctx, cont.ID, types.ExecConfig{
 		Cmd:          cmd,
 		Detach:       false,
@@ -269,7 +302,7 @@ func (c *Component) Exec(ctx context.Context, cmd []string) (int, error) {
 
 	scanner := bufio.NewScanner(hijack.Reader)
 	for scanner.Scan() {
-		c.Writer.WriteString(c.Writer.Color.Cyan(fmt.Sprintf("exec output: %s", scanner.Text())))
+		c.Writer().WriteString(c.Writer().Color.Cyan(fmt.Sprintf("exec output: %s", scanner.Text())))
 	}
 
 	hijack.Close()
@@ -279,7 +312,7 @@ func (c *Component) Exec(ctx context.Context, cmd []string) (int, error) {
 		return 0, err
 	}
 
-	c.Writer.WriteString(c.Writer.Color.Cyan(fmt.Sprintf("exit code: %d", execResp.ExitCode)))
+	c.Writer().WriteString(c.Writer().Color.Cyan(fmt.Sprintf("exit code: %d", execResp.ExitCode)))
 	return execResp.ExitCode, nil
 }
 
@@ -301,52 +334,28 @@ func (c *Component) findContainer(ctx context.Context) (*types.Container, error)
 	return nil, nil
 }
 
-func (c *Component) followLogs(id string) error {
-	containerReader, err := c.cli.ContainerLogs(context.Background(), id, types.ContainerLogsOptions{
-		ShowStdout: true,
-		ShowStderr: true,
-		Timestamps: true,
-		Follow:     true,
-	})
+func (c *Component) writeLogs(id string) {
+	err := followLogs(
+		context.Background(),
+		c.cli,
+		id,
+		func(timestamp time.Time, text string, stream stdcopy.StdType) (stop bool) {
+			if timestamp.Before(c.latestLogMessage) {
+				return false
+			}
+
+			if stream == stdcopy.Stderr {
+				text = c.Writer().Color.Red(text)
+			}
+
+			c.latestLogMessage = timestamp
+			c.Writer().WriteStringWithTime(timestamp, text)
+			return false
+		},
+	)
 	if err != nil {
-		return err
+		c.Logger()(fengshui.LogLevelError, "could not read container logs for "+c.ID())
 	}
-
-	go func() {
-		scanner := bufio.NewScanner(containerReader)
-		for scanner.Scan() {
-			bytes := scanner.Bytes()
-			var text string
-			var t time.Time
-			if len(bytes) > 8 {
-				t, text = extractMessageTime(string(bytes[8:]))
-				stream := stdcopy.StdType(bytes[0])
-				if stream == stdcopy.Stderr {
-					// stderr
-					text = c.Writer.Color.Red(text)
-				} else if stream == stdcopy.Systemerr {
-					// docker system error, restart consume logs
-					_ = containerReader.Close()
-					err = c.followLogs(id)
-					if err != nil {
-						msg := fmt.Sprintf("failed to consume container logs: %v", err)
-						c.Writer.WriteString(c.Writer.Color.Red(msg))
-					}
-					return
-				}
-			} else {
-				t, text = extractMessageTime(string(bytes))
-			}
-			if t.Before(c.latestLogMessage) {
-				continue
-			}
-			c.latestLogMessage = t
-			c.Writer.WriteStringWithTime(t, text)
-		}
-
-		_ = containerReader.Close()
-	}()
-	return nil
 }
 
 func (c *Component) Host() string {
@@ -357,13 +366,10 @@ func (c *Component) ContainerName() string {
 	return c.containerName
 }
 
-func extractMessageTime(message string) (time.Time, string) {
-	pos := strings.Index(message, " ")
-	if pos > -1 {
-		t, err := time.Parse(time.RFC3339Nano, message[:pos])
-		if err == nil {
-			return t, message[pos+1:]
-		}
-	}
-	return time.Now(), message
+func (c *Component) Writer() *fengshui.Writer {
+	return c.writer
+}
+
+func (c *Component) Logger() fengshui.Logger {
+	return c.blueprint.Logger
 }

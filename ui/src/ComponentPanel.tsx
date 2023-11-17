@@ -84,7 +84,8 @@ function ComponentPanel(props: ComponentPanelProps) {
                     <Button
                         disabled={
                             props.loading ||
-                            props.component.status !== 'running'
+                            (props.component.status !== 'running' &&
+                                props.component.status !== 'starting')
                         }
                         onClick={() => {
                             navigate(`/${props.component.id}`);
@@ -100,7 +101,8 @@ function ComponentPanel(props: ComponentPanelProps) {
                     <Button
                         disabled={
                             props.loading ||
-                            props.component.status !== 'running'
+                            (props.component.status !== 'running' &&
+                                props.component.status !== 'starting')
                         }
                         onClick={props.stopComponent}
                         size="small"
@@ -113,7 +115,8 @@ function ComponentPanel(props: ComponentPanelProps) {
                     <Button
                         disabled={
                             props.loading ||
-                            props.component.status === 'running'
+                            props.component.status === 'running' ||
+                            props.component.status === 'starting'
                         }
                         onClick={() => {
                             navigate(`/${props.component.id}`);
@@ -138,6 +141,7 @@ function ComponentPanel(props: ComponentPanelProps) {
                                     data={props.data}
                                     title={<div />}
                                     clear={props.clear}
+                                    scrolling={false}
                                 />
                             }
                         />
