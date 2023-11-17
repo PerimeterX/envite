@@ -12,7 +12,7 @@ type Blueprint struct {
 	components     [][]Component
 	componentsByID map[string]Component
 	outputManager  *outputManager
-	logger         Logger
+	Logger         Logger
 }
 
 func NewBlueprint(id string, components [][]Component, options ...Option) (*Blueprint, error) {
@@ -22,7 +22,13 @@ func NewBlueprint(id string, components [][]Component, options ...Option) (*Blue
 	id = strings.ReplaceAll(id, " ", "_")
 
 	om := newOutputManager()
-	componentsByID := make(map[string]Component)
+	b := &Blueprint{
+		id:             id,
+		components:     components,
+		componentsByID: make(map[string]Component),
+		outputManager:  om,
+	}
+
 	for _, concurrentComponents := range components {
 		for _, component := range concurrentComponents {
 			componentID := component.ID()
@@ -33,26 +39,25 @@ func NewBlueprint(id string, components [][]Component, options ...Option) (*Blue
 				return nil, ErrInvalidComponentID{id: componentID, msg: "component id may not contain '|' or ' '"}
 			}
 
-			_, exists := componentsByID[componentID]
+			_, exists := b.componentsByID[componentID]
 			if exists {
 				return nil, ErrInvalidComponentID{id: componentID, msg: "duplicate component id"}
 			}
 
-			err := component.SetOutputWriter(context.Background(), om.writer(component.ID()))
+			err := component.AttachBlueprint(context.Background(), b, om.writer(component.ID()))
 			if err != nil {
 				return nil, err
 			}
 
-			componentsByID[componentID] = component
+			b.componentsByID[componentID] = component
 		}
 	}
 
-	b := &Blueprint{id: id, components: components, componentsByID: componentsByID, outputManager: om}
 	for _, option := range options {
 		option(b)
 	}
-	if b.logger == nil {
-		b.logger = func(LogLevel, string) {}
+	if b.Logger == nil {
+		b.Logger = func(LogLevel, string) {}
 	}
 
 	return b, nil
@@ -67,7 +72,7 @@ func (b *Blueprint) Components() []Component {
 }
 
 func (b *Blueprint) Apply(ctx context.Context, enabledComponentIDs []string) error {
-	b.logger(LogLevelInfo, "applying state")
+	b.Logger(LogLevelInfo, "applying state")
 	enabledComponents := make(map[string]struct{}, len(enabledComponentIDs))
 	for _, id := range enabledComponentIDs {
 		enabledComponents[id] = struct{}{}
@@ -77,12 +82,12 @@ func (b *Blueprint) Apply(ctx context.Context, enabledComponentIDs []string) err
 		return err
 	}
 
-	b.logger(LogLevelInfo, "finished applying state")
+	b.Logger(LogLevelInfo, "finished applying state")
 	return nil
 }
 
 func (b *Blueprint) StartAll(ctx context.Context) error {
-	b.logger(LogLevelInfo, "starting all")
+	b.Logger(LogLevelInfo, "starting all")
 	all := make(map[string]struct{}, len(b.componentsByID))
 	for id := range b.componentsByID {
 		all[id] = struct{}{}
@@ -92,19 +97,19 @@ func (b *Blueprint) StartAll(ctx context.Context) error {
 		return err
 	}
 
-	b.logger(LogLevelInfo, "finished starting all")
+	b.Logger(LogLevelInfo, "finished starting all")
 	return nil
 }
 
 func (b *Blueprint) StopAll(ctx context.Context) error {
-	b.logger(LogLevelInfo, "stopping all")
+	b.Logger(LogLevelInfo, "stopping all")
 	for i := len(b.components) - 1; i >= 0; i-- {
 		concurrentComponents := b.components[i]
 		g, ctx := errgroup.WithContext(ctx)
 		for _, component := range concurrentComponents {
 			component := component
 			g.Go(func() error {
-				b.logger(LogLevelInfo, fmt.Sprintf("stopping %s", component.ID()))
+				b.Logger(LogLevelInfo, fmt.Sprintf("stopping %s", component.ID()))
 				err := component.Stop(ctx)
 				if err != nil {
 					return fmt.Errorf("could not stop %s: %w", component.ID(), err)
@@ -119,7 +124,7 @@ func (b *Blueprint) StopAll(ctx context.Context) error {
 		}
 	}
 
-	b.logger(LogLevelInfo, "finished stopping all")
+	b.Logger(LogLevelInfo, "finished stopping all")
 	return nil
 }
 
@@ -138,19 +143,19 @@ func (b *Blueprint) StartComponent(ctx context.Context, componentID string) erro
 		return nil
 	}
 
-	b.logger(LogLevelInfo, fmt.Sprintf("preparing %s", componentID))
+	b.Logger(LogLevelInfo, fmt.Sprintf("preparing %s", componentID))
 	err = component.Prepare(ctx)
 	if err != nil {
 		return err
 	}
 
-	b.logger(LogLevelInfo, fmt.Sprintf("starting %s", componentID))
+	b.Logger(LogLevelInfo, fmt.Sprintf("starting %s", componentID))
 	err = component.Start(ctx)
 	if err != nil {
 		return err
 	}
 
-	b.logger(LogLevelInfo, fmt.Sprintf("finished starting %s", componentID))
+	b.Logger(LogLevelInfo, fmt.Sprintf("finished starting %s", componentID))
 	return nil
 }
 
@@ -160,13 +165,13 @@ func (b *Blueprint) StopComponent(ctx context.Context, componentID string) error
 		return err
 	}
 
-	b.logger(LogLevelInfo, fmt.Sprintf("stopping %s", componentID))
+	b.Logger(LogLevelInfo, fmt.Sprintf("stopping %s", componentID))
 	err = component.Stop(ctx)
 	if err != nil {
 		return err
 	}
 
-	b.logger(LogLevelInfo, fmt.Sprintf("finished stopping %s", componentID))
+	b.Logger(LogLevelInfo, fmt.Sprintf("finished stopping %s", componentID))
 	return nil
 }
 
@@ -197,13 +202,13 @@ func (b *Blueprint) Output() *Reader {
 }
 
 func (b *Blueprint) Cleanup(ctx context.Context) error {
-	b.logger(LogLevelInfo, "cleaning up")
+	b.Logger(LogLevelInfo, "cleaning up")
 	g, ctx := errgroup.WithContext(ctx)
 	for _, concurrentComponents := range b.components {
 		for _, component := range concurrentComponents {
 			component := component
 			g.Go(func() error {
-				b.logger(LogLevelInfo, fmt.Sprintf("cleaning up %s", component.ID()))
+				b.Logger(LogLevelInfo, fmt.Sprintf("cleaning up %s", component.ID()))
 				err := component.Cleanup(ctx)
 				if err != nil {
 					return fmt.Errorf("could not cleanup %s: %w", component.ID(), err)
@@ -218,7 +223,7 @@ func (b *Blueprint) Cleanup(ctx context.Context) error {
 		return err
 	}
 
-	b.logger(LogLevelInfo, "finished cleaning up")
+	b.Logger(LogLevelInfo, "finished cleaning up")
 	return nil
 }
 
@@ -244,24 +249,24 @@ func (b *Blueprint) apply(ctx context.Context, enabledComponentIDs map[string]st
 						return nil
 					}
 
-					b.logger(LogLevelInfo, fmt.Sprintf("starting %s", component.ID()))
+					b.Logger(LogLevelInfo, fmt.Sprintf("starting %s", component.ID()))
 					err = component.Start(ctx)
 					if err != nil {
 						return fmt.Errorf("could not start %s: %w", component.ID(), err)
 					}
 
-					b.logger(LogLevelInfo, fmt.Sprintf("finished starting %s", component.ID()))
+					b.Logger(LogLevelInfo, fmt.Sprintf("finished starting %s", component.ID()))
 					return nil
 				})
 			} else {
 				g.Go(func() error {
-					b.logger(LogLevelInfo, fmt.Sprintf("stopping %s", component.ID()))
+					b.Logger(LogLevelInfo, fmt.Sprintf("stopping %s", component.ID()))
 					err := component.Stop(ctx)
 					if err != nil {
 						return fmt.Errorf("could not stop %s: %w", component.ID(), err)
 					}
 
-					b.logger(LogLevelInfo, fmt.Sprintf("finished stopping %s", component.ID()))
+					b.Logger(LogLevelInfo, fmt.Sprintf("finished stopping %s", component.ID()))
 					return nil
 				})
 			}
@@ -293,13 +298,13 @@ func (b *Blueprint) prepare(ctx context.Context, enabledComponentIDs map[string]
 					return nil
 				}
 
-				b.logger(LogLevelInfo, fmt.Sprintf("preparing %s", component.ID()))
+				b.Logger(LogLevelInfo, fmt.Sprintf("preparing %s", component.ID()))
 				err = component.Prepare(ctx)
 				if err != nil {
 					return fmt.Errorf("could not prepare %s: %w", component.ID(), err)
 				}
 
-				b.logger(LogLevelInfo, fmt.Sprintf("finished preparing %s", component.ID()))
+				b.Logger(LogLevelInfo, fmt.Sprintf("finished preparing %s", component.ID()))
 				return nil
 			})
 		}

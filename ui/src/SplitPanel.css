@@ -10,6 +10,29 @@
     padding: 11px 15px;
     box-sizing: border-box;
     text-align: right;
+    display: flex;
+    justify-content: space-between;
+}
+
+.SplitPanel .title .info {
+    font-size: 13px;
+    font-weight: 600;
+    color: #939393;
+    line-height: 40px;
+}
+
+.SplitPanel .title .info.scrolling-mode {
+    color: #00ffbb;
+    animation: blink 1s linear infinite;
+}
+
+@keyframes blink {
+    0% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.5;
+    }
 }
 
 .SplitPanel .title .action {
@@ -32,4 +55,8 @@
     height: 300px;
     border-right: 1px solid #232323;
     border-bottom: 1px solid #232323;
+}
+
+.SplitPanel .panel.scrolling {
+    cursor: ns-resize;
 }

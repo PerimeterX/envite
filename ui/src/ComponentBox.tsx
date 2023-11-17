@@ -6,9 +6,9 @@ import CheckIcon from '@mui/icons-material/Check';
 import FavoriteIcon from '@mui/icons-material/Favorite';
 import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
 import PriorityHighIcon from '@mui/icons-material/PriorityHigh';
-import SyncIcon from '@mui/icons-material/Sync';
 import { Tooltip } from '@mui/material';
 import { NavLink } from 'react-router-dom';
+import Loader from './Loader';
 
 interface ComponentBoxProps {
     component: Component;
@@ -21,39 +21,33 @@ interface ComponentBoxProps {
 interface UiParams {
     colorClass: string;
     icon: any;
-    iconClass: string;
     tooltip: (name: string) => string;
 }
 
-export const statusToUiParams: { [key: string]: UiParams } = {
+const statusToUiParams: { [key: string]: UiParams } = {
     stopped: {
         colorClass: '',
-        icon: CloseIcon,
-        iconClass: '',
+        icon: <CloseIcon />,
         tooltip: (name) => `${name} is not running`
     },
     failed: {
         colorClass: 'failure',
-        icon: PriorityHighIcon,
-        iconClass: '',
+        icon: <PriorityHighIcon />,
         tooltip: (name) => `${name} failed`
     },
     starting: {
         colorClass: '',
-        icon: SyncIcon,
-        iconClass: '',
+        icon: <Loader type="secondary" />,
         tooltip: (name) => `${name} is starting`
     },
     running: {
         colorClass: 'success',
-        icon: FavoriteIcon,
-        iconClass: 'heartbeat',
+        icon: <FavoriteIcon className="heartbeat" />,
         tooltip: (name) => `${name} is running`
     },
     finished: {
         colorClass: 'success',
-        icon: CheckIcon,
-        iconClass: '',
+        icon: <CheckIcon />,
         tooltip: (name) => `${name} finished`
     }
 };
@@ -61,7 +55,6 @@ export const statusToUiParams: { [key: string]: UiParams } = {
 function ComponentBox(props: ComponentBoxProps) {
     const uiParams =
         statusToUiParams[props.component.status] || statusToUiParams.stopped;
-    const Icon = uiParams.icon;
     return (
         <div className="ComponentBox">
             <Tooltip
@@ -84,7 +77,7 @@ function ComponentBox(props: ComponentBoxProps) {
             </Tooltip>
             <Tooltip title={uiParams.tooltip(props.component.id)}>
                 <div className={`component-icon ${uiParams.colorClass}`}>
-                    <Icon className={uiParams.iconClass} />
+                    {uiParams.icon}
                 </div>
             </Tooltip>
             <NavLink

@@ -42,7 +42,7 @@ func (m *SeedComponent) Type() string {
 	return ComponentType
 }
 
-func (m *SeedComponent) SetOutputWriter(_ context.Context, writer *fengshui.Writer) error {
+func (m *SeedComponent) AttachBlueprint(_ context.Context, _ *fengshui.Blueprint, writer *fengshui.Writer) error {
 	m.writer = writer
 	return nil
 }

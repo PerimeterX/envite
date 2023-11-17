@@ -141,6 +141,7 @@ function ComponentPanel(props: ComponentPanelProps) {
                                     data={props.data}
                                     title={<div />}
                                     clear={props.clear}
+                                    scrolling={false}
                                 />
                             }
                         />
