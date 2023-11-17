@@ -8,6 +8,7 @@ import (
 	"github.com/docker/docker/api/types/network"
 	"github.com/docker/docker/client"
 	"github.com/docker/go-connections/nat"
+	"os"
 	"runtime"
 	"strings"
 	"sync"
@@ -85,6 +86,11 @@ func newOpenLinuxNetwork(cli *client.Client, blueprintID string) (*Network, erro
 }
 
 func newOpenNetwork(cli *client.Client, blueprintID string) (*Network, error) {
+	err := validateHostsFile()
+	if err != nil {
+		return nil, err
+	}
+
 	id, err := createNetworkIfNotExist(cli, blueprintID, "bridge")
 	if err != nil {
 		return nil, err
@@ -158,6 +164,65 @@ func findNetwork(networks []types.NetworkResource, identifier string) (types.Net
 		}
 	}
 	return types.NetworkResource{}, ErrNetworkNotExist{network: identifier}
+}
+
+func validateHostsFile() error {
+	valid, err := isHostsFileValid()
+	if err != nil {
+		return err
+	}
+
+	if valid {
+		return nil
+	}
+
+	err = updateHostsFile()
+	if err != nil {
+		if strings.Contains(err.Error(), "permission denied") {
+			fmt.Println("missing permissions to add a required entry to /etc/hosts file.\n" +
+				"without it, docker networking will not work as expected.\n" +
+				"to fix that, either rerun with sudo permissions, " +
+				"or manually add the following line to your /etc/hosts file:\n" +
+				"127.0.0.1 host.docker.internal\n" +
+				"and then rerun normally.")
+			os.Exit(1)
+		}
+
+		return err
+	}
+
+	return nil
+}
+
+func isHostsFileValid() (bool, error) {
+	data, err := os.ReadFile("/etc/hosts")
+	if err != nil {
+		return false, err
+	}
+
+	lines := strings.Split(string(data), "\n")
+	for _, line := range lines {
+		if strings.TrimSpace(line) == "127.0.0.1 host.docker.internal" {
+			return true, nil
+		}
+	}
+
+	return false, nil
+}
+
+func updateHostsFile() error {
+	f, err := os.OpenFile("/etc/hosts", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		return err
+	}
+
+	_, err = f.WriteString("127.0.0.1 host.docker.internal\n")
+	if err != nil {
+		_ = f.Close()
+		return err
+	}
+
+	return f.Close()
 }
 
 type ErrNetworkNotExist struct {

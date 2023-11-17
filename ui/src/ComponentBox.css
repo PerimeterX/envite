@@ -41,7 +41,13 @@
     border: 1px solid #545454;
 }
 
-.component-icon.highlighted {
+.component-icon.failure {
+    border: rgb(190 86 86);
+    box-shadow: 0 0 4px 0 rgba(190, 86, 86, 0.6);
+    color: rgb(190 86 86);
+}
+
+.component-icon.success {
     border: 1px solid #00ffbb;
     box-shadow: 0 0 4px 0 #00ffbb7a;
     color: #00ffbb;
@@ -82,9 +88,11 @@
 }
 
 .component-icon svg {
-    width: 10px;
-    height: 10px;
+    width: 12px;
+    height: 12px;
     margin-top: 15px;
+    margin-left: -1px;
+    margin-right: -1px;
 }
 
 .default .component-icon {

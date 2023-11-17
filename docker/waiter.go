@@ -1,11 +1,10 @@
 package docker
 
 import (
-	"bufio"
 	"context"
 	"fmt"
-	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/client"
+	"github.com/docker/docker/pkg/stdcopy"
 	"regexp"
 	"strings"
 	"time"
@@ -32,30 +31,24 @@ func WaitForDuration(duration string) Waiter {
 	}
 }
 
-type waiterFunc func(cli *client.Client, containerID string) error
+type waiterFunc func(ctx context.Context, cli *client.Client, containerID string, isNewContainer bool) error
 
 func validateWaiter(w Waiter) (waiterFunc, error) {
 	switch w.Type {
 	case WaiterTypeString:
-		return func(cli *client.Client, containerID string) error {
-			containerReader, err := cli.ContainerLogs(context.Background(), containerID, types.ContainerLogsOptions{
-				ShowStdout: true,
-				ShowStderr: true,
-				Timestamps: true,
-				Follow:     true,
+		return func(ctx context.Context, cli *client.Client, containerID string, _ bool) error {
+			var reached bool
+			err := followLogs(ctx, cli, containerID, func(_ time.Time, text string, _ stdcopy.StdType) (stop bool) {
+				reached = strings.Contains(text, w.String)
+				return reached
 			})
 			if err != nil {
 				return err
 			}
 
-			scanner := bufio.NewScanner(containerReader)
-			for scanner.Scan() {
-				if strings.Contains(scanner.Text(), w.String) {
-					return nil
-				}
+			if reached {
+				return nil
 			}
-
-			_ = containerReader.Close()
 
 			return ErrContainerStopped{without: fmt.Sprintf("reaching log '%s'", w.String)}
 		}, nil
@@ -65,25 +58,19 @@ func validateWaiter(w Waiter) (waiterFunc, error) {
 			return nil, err
 		}
 
-		return func(cli *client.Client, containerID string) error {
-			containerReader, err := cli.ContainerLogs(context.Background(), containerID, types.ContainerLogsOptions{
-				ShowStdout: true,
-				ShowStderr: true,
-				Timestamps: true,
-				Follow:     true,
+		return func(ctx context.Context, cli *client.Client, containerID string, _ bool) error {
+			var reached bool
+			err := followLogs(ctx, cli, containerID, func(_ time.Time, text string, _ stdcopy.StdType) (stop bool) {
+				reached = re.MatchString(text)
+				return reached
 			})
 			if err != nil {
 				return err
 			}
 
-			scanner := bufio.NewScanner(containerReader)
-			for scanner.Scan() {
-				if re.MatchString(scanner.Text()) {
-					return nil
-				}
+			if reached {
+				return nil
 			}
-
-			_ = containerReader.Close()
 
 			return ErrContainerStopped{without: fmt.Sprintf("reaching log regex '%s'", w.String)}
 		}, nil
@@ -93,7 +80,11 @@ func validateWaiter(w Waiter) (waiterFunc, error) {
 			return nil, err
 		}
 
-		return func(cli *client.Client, containerID string) error {
+		return func(_ context.Context, _ *client.Client, _ string, isNewContainer bool) error {
+			if !isNewContainer {
+				return nil
+			}
+
 			time.Sleep(d)
 			return nil
 		}, nil

@@ -10,7 +10,7 @@ export interface Status {
 export interface Component {
     id: string;
     type: string;
-    status: 'stopped' | 'running' | 'finished';
+    status: 'stopped' | 'failed' | 'starting' | 'running' | 'finished';
     info: any;
     env_vars: { [key: string]: string };
 }

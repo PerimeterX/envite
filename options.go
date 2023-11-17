@@ -16,6 +16,6 @@ const (
 
 func WithLogger(logger Logger) Option {
 	return func(b *Blueprint) {
-		b.logger = logger
+		b.Logger = logger
 	}
 }
