@@ -1,7 +1,6 @@
 import React from 'react';
 import './ComponentTitle.css';
 import { Component } from './api';
-import { statusToUiParams } from './ComponentBox';
 import { NavLink } from 'react-router-dom';
 
 interface ComponentTitleProps {
@@ -9,7 +8,6 @@ interface ComponentTitleProps {
 }
 
 function ComponentTitle(props: ComponentTitleProps) {
-    const Icon = statusToUiParams[props.component.status].icon;
     return (
         <div className="ComponentTitle">
             <NavLink
@@ -29,8 +27,7 @@ function ComponentTitle(props: ComponentTitleProps) {
                             : ''
                     }`}
                 >
-                    {props.component.status}&nbsp;
-                    <Icon className="icon" fontSize="inherit" />
+                    {props.component.status}
                 </span>
             </div>
         </div>
