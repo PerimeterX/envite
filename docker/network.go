@@ -9,6 +9,7 @@ import (
 	"github.com/docker/docker/client"
 	"github.com/docker/go-connections/nat"
 	"os"
+	"regexp"
 	"runtime"
 	"strings"
 	"sync"
@@ -194,6 +195,8 @@ func validateHostsFile() error {
 	return nil
 }
 
+var hostsEntryRE = regexp.MustCompile(`127\.0\.0\.1\s+host\.docker\.internal`)
+
 func isHostsFileValid() (bool, error) {
 	data, err := os.ReadFile("/etc/hosts")
 	if err != nil {
@@ -202,7 +205,7 @@ func isHostsFileValid() (bool, error) {
 
 	lines := strings.Split(string(data), "\n")
 	for _, line := range lines {
-		if strings.TrimSpace(line) == "127.0.0.1 host.docker.internal" {
+		if hostsEntryRE.MatchString(strings.TrimSpace(line)) {
 			return true, nil
 		}
 	}
