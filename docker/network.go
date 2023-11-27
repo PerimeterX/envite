@@ -16,9 +16,10 @@ import (
 )
 
 type Network struct {
-	Client      *client.Client
-	BlueprintID string
-	ID          string
+	Client         *client.Client
+	BlueprintID    string
+	ID             string
+	OnNewComponent func(*Config)
 
 	lock         sync.Mutex
 	shouldDelete bool
@@ -36,6 +37,9 @@ func NewNetwork(cli *client.Client, networkIdentifier, blueprintID string) (*Net
 }
 
 func (n *Network) NewComponent(config Config) (*Component, error) {
+	if n.OnNewComponent != nil {
+		n.OnNewComponent(&config)
+	}
 	return newComponent(n.Client, n.BlueprintID, n, config)
 }
 
