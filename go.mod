@@ -1,4 +1,4 @@
-module github.com/perimeterx/fengshui
+module github.com/perimeterx/envite
 
 go 1.20
 

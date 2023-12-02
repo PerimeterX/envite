@@ -17,7 +17,7 @@ import (
 
 type Network struct {
 	Client         *client.Client
-	BlueprintID    string
+	envID          string
 	ID             string
 	OnNewComponent func(*Config)
 
@@ -26,13 +26,13 @@ type Network struct {
 	configure    func(config Config, runConfig *runConfig, containerName string)
 }
 
-func NewNetwork(cli *client.Client, networkIdentifier, blueprintID string) (*Network, error) {
+func NewNetwork(cli *client.Client, networkIdentifier, envID string) (*Network, error) {
 	if networkIdentifier != "" {
-		return newClosedNetwork(cli, blueprintID, networkIdentifier)
+		return newClosedNetwork(cli, envID, networkIdentifier)
 	} else if runtime.GOOS == "linux" {
-		return newOpenLinuxNetwork(cli, blueprintID)
+		return newOpenLinuxNetwork(cli, envID)
 	} else {
-		return newOpenNetwork(cli, blueprintID)
+		return newOpenNetwork(cli, envID)
 	}
 }
 
@@ -40,10 +40,10 @@ func (n *Network) NewComponent(config Config) (*Component, error) {
 	if n.OnNewComponent != nil {
 		n.OnNewComponent(&config)
 	}
-	return newComponent(n.Client, n.BlueprintID, n, config)
+	return newComponent(n.Client, n.envID, n, config)
 }
 
-func newClosedNetwork(cli *client.Client, blueprintID, networkIdentifier string) (*Network, error) {
+func newClosedNetwork(cli *client.Client, envID, networkIdentifier string) (*Network, error) {
 	networks, err := cli.NetworkList(context.Background(), types.NetworkListOptions{})
 	if err != nil {
 		return nil, err
@@ -56,7 +56,7 @@ func newClosedNetwork(cli *client.Client, blueprintID, networkIdentifier string)
 
 	return &Network{
 		Client:       cli,
-		BlueprintID:  blueprintID,
+		envID:        envID,
 		shouldDelete: false,
 		ID:           nw.ID,
 		configure: func(config Config, runConfig *runConfig, containerName string) {
@@ -69,15 +69,15 @@ func newClosedNetwork(cli *client.Client, blueprintID, networkIdentifier string)
 	}, nil
 }
 
-func newOpenLinuxNetwork(cli *client.Client, blueprintID string) (*Network, error) {
-	id, err := createNetworkIfNotExist(cli, blueprintID, "host")
+func newOpenLinuxNetwork(cli *client.Client, envID string) (*Network, error) {
+	id, err := createNetworkIfNotExist(cli, envID, "host")
 	if err != nil {
 		return nil, err
 	}
 
 	return &Network{
 		Client:       cli,
-		BlueprintID:  blueprintID,
+		envID:        envID,
 		shouldDelete: true,
 		ID:           id,
 		configure: func(config Config, runConfig *runConfig, containerName string) {
@@ -90,20 +90,20 @@ func newOpenLinuxNetwork(cli *client.Client, blueprintID string) (*Network, erro
 	}, nil
 }
 
-func newOpenNetwork(cli *client.Client, blueprintID string) (*Network, error) {
+func newOpenNetwork(cli *client.Client, envID string) (*Network, error) {
 	err := validateHostsFile()
 	if err != nil {
 		return nil, err
 	}
 
-	id, err := createNetworkIfNotExist(cli, blueprintID, "bridge")
+	id, err := createNetworkIfNotExist(cli, envID, "bridge")
 	if err != nil {
 		return nil, err
 	}
 
 	return &Network{
 		Client:       cli,
-		BlueprintID:  blueprintID,
+		envID:        envID,
 		shouldDelete: true,
 		ID:           id,
 		configure: func(config Config, runConfig *runConfig, containerName string) {
@@ -136,7 +136,7 @@ func (n *Network) delete(ctx context.Context, c *Component) error {
 
 	n.lock.Lock()
 	defer n.lock.Unlock()
-	err := c.cli.NetworkRemove(ctx, c.blueprintID)
+	err := c.cli.NetworkRemove(ctx, c.envID)
 	if err != nil &&
 		!strings.Contains(err.Error(), "has active endpoints") &&
 		!strings.Contains(err.Error(), "not found") {

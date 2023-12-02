@@ -78,3 +78,7 @@ main {
     width: 100%;
     display: flex;
 }
+
+#logo-large-cache {
+    display: none;
+}

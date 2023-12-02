@@ -1,4 +1,4 @@
-package fengshui
+package envite
 
 import (
 	"context"
@@ -7,7 +7,7 @@ import (
 	"strings"
 )
 
-type Blueprint struct {
+type Environment struct {
 	id             string
 	components     [][]Component
 	componentsByID map[string]Component
@@ -15,14 +15,14 @@ type Blueprint struct {
 	Logger         Logger
 }
 
-func NewBlueprint(id string, components [][]Component, options ...Option) (*Blueprint, error) {
+func NewEnvironment(id string, components [][]Component, options ...Option) (*Environment, error) {
 	if id == "" {
-		id = "generic_blueprint"
+		id = "generic_environment"
 	}
 	id = strings.ReplaceAll(id, " ", "_")
 
 	om := newOutputManager()
-	b := &Blueprint{
+	b := &Environment{
 		id:             id,
 		components:     components,
 		componentsByID: make(map[string]Component),
@@ -44,7 +44,7 @@ func NewBlueprint(id string, components [][]Component, options ...Option) (*Blue
 				return nil, ErrInvalidComponentID{id: componentID, msg: "duplicate component id"}
 			}
 
-			err := component.AttachBlueprint(context.Background(), b, om.writer(component.ID()))
+			err := component.AttachEnvironment(context.Background(), b, om.writer(component.ID()))
 			if err != nil {
 				return nil, err
 			}
@@ -63,7 +63,7 @@ func NewBlueprint(id string, components [][]Component, options ...Option) (*Blue
 	return b, nil
 }
 
-func (b *Blueprint) Components() []Component {
+func (b *Environment) Components() []Component {
 	result := make([]Component, 0, len(b.componentsByID))
 	for _, component := range b.componentsByID {
 		result = append(result, component)
@@ -71,7 +71,7 @@ func (b *Blueprint) Components() []Component {
 	return result
 }
 
-func (b *Blueprint) Apply(ctx context.Context, enabledComponentIDs []string) error {
+func (b *Environment) Apply(ctx context.Context, enabledComponentIDs []string) error {
 	b.Logger(LogLevelInfo, "applying state")
 	enabledComponents := make(map[string]struct{}, len(enabledComponentIDs))
 	for _, id := range enabledComponentIDs {
@@ -86,7 +86,7 @@ func (b *Blueprint) Apply(ctx context.Context, enabledComponentIDs []string) err
 	return nil
 }
 
-func (b *Blueprint) StartAll(ctx context.Context) error {
+func (b *Environment) StartAll(ctx context.Context) error {
 	b.Logger(LogLevelInfo, "starting all")
 	all := make(map[string]struct{}, len(b.componentsByID))
 	for id := range b.componentsByID {
@@ -101,7 +101,7 @@ func (b *Blueprint) StartAll(ctx context.Context) error {
 	return nil
 }
 
-func (b *Blueprint) StopAll(ctx context.Context) error {
+func (b *Environment) StopAll(ctx context.Context) error {
 	b.Logger(LogLevelInfo, "stopping all")
 	for i := len(b.components) - 1; i >= 0; i-- {
 		concurrentComponents := b.components[i]
@@ -128,7 +128,7 @@ func (b *Blueprint) StopAll(ctx context.Context) error {
 	return nil
 }
 
-func (b *Blueprint) StartComponent(ctx context.Context, componentID string) error {
+func (b *Environment) StartComponent(ctx context.Context, componentID string) error {
 	component, err := b.componentByID(componentID)
 	if err != nil {
 		return err
@@ -159,7 +159,7 @@ func (b *Blueprint) StartComponent(ctx context.Context, componentID string) erro
 	return nil
 }
 
-func (b *Blueprint) StopComponent(ctx context.Context, componentID string) error {
+func (b *Environment) StopComponent(ctx context.Context, componentID string) error {
 	component, err := b.componentByID(componentID)
 	if err != nil {
 		return err
@@ -175,7 +175,7 @@ func (b *Blueprint) StopComponent(ctx context.Context, componentID string) error
 	return nil
 }
 
-func (b *Blueprint) Status(ctx context.Context) (GetStatusResponse, error) {
+func (b *Environment) Status(ctx context.Context) (GetStatusResponse, error) {
 	result := GetStatusResponse{ID: b.id, Components: make([][]GetStatusResponseComponent, len(b.components))}
 	for i, concurrentComponents := range b.components {
 		components := make([]GetStatusResponseComponent, len(concurrentComponents))
@@ -197,11 +197,11 @@ func (b *Blueprint) Status(ctx context.Context) (GetStatusResponse, error) {
 	return result, nil
 }
 
-func (b *Blueprint) Output() *Reader {
+func (b *Environment) Output() *Reader {
 	return b.outputManager.reader()
 }
 
-func (b *Blueprint) Cleanup(ctx context.Context) error {
+func (b *Environment) Cleanup(ctx context.Context) error {
 	b.Logger(LogLevelInfo, "cleaning up")
 	g, ctx := errgroup.WithContext(ctx)
 	for _, concurrentComponents := range b.components {
@@ -227,7 +227,7 @@ func (b *Blueprint) Cleanup(ctx context.Context) error {
 	return nil
 }
 
-func (b *Blueprint) apply(ctx context.Context, enabledComponentIDs map[string]struct{}) error {
+func (b *Environment) apply(ctx context.Context, enabledComponentIDs map[string]struct{}) error {
 	err := b.prepare(ctx, enabledComponentIDs)
 	if err != nil {
 		return err
@@ -279,7 +279,7 @@ func (b *Blueprint) apply(ctx context.Context, enabledComponentIDs map[string]st
 	return nil
 }
 
-func (b *Blueprint) prepare(ctx context.Context, enabledComponentIDs map[string]struct{}) error {
+func (b *Environment) prepare(ctx context.Context, enabledComponentIDs map[string]struct{}) error {
 	g, ctx := errgroup.WithContext(ctx)
 	for _, concurrentComponents := range b.components {
 		for _, component := range concurrentComponents {
@@ -312,7 +312,7 @@ func (b *Blueprint) prepare(ctx context.Context, enabledComponentIDs map[string]
 	return g.Wait()
 }
 
-func (b *Blueprint) componentByID(componentID string) (Component, error) {
+func (b *Environment) componentByID(componentID string) (Component, error) {
 	component := b.componentsByID[componentID]
 	if component == nil {
 		return nil, ErrInvalidComponentID{id: componentID, msg: "not found"}
