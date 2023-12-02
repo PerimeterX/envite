@@ -6,9 +6,12 @@ import { ApiCall, Message, Status } from './api';
 import {
     Alert,
     AlertTitle,
+    Badge,
     createTheme,
+    IconButton,
     Snackbar,
-    ThemeProvider
+    ThemeProvider,
+    Tooltip
 } from '@mui/material';
 import MainPanel from './MainPanel';
 import { AxiosError, CanceledError } from 'axios';
@@ -19,6 +22,8 @@ import ApiLogDialog, {
     formatApiFailure,
     formatApiSuccess
 } from './ApiLogDialog';
+import FilterListIcon from '@mui/icons-material/FilterList';
+import FavoriteIcon from '@mui/icons-material/Favorite';
 
 const REFRESH_STATUS_INTERVAL = 5000;
 
@@ -70,22 +75,25 @@ function App() {
         });
     }, []);
 
-    const reportApiError = useCallback((call: ApiCall<any>, error: any) => {
-        setApiCall(null);
-        const msg = formatHttpError(error);
-        setApiLog((prevState) => [
-            ...prevState,
-            { call: call, err: msg, date: new Date() }
-        ]);
-        setApiNotification(true);
-        if (!(error instanceof CanceledError)) {
-            setApiMessage({
-                type: 'error',
-                title: `${call.title} failed`,
-                msg: formatApiFailure(call, msg)
-            });
-        }
-    }, []);
+    const reportApiError = useCallback(
+        (call: ApiCall<any>, error: any) => {
+            setApiCall(null);
+            const msg = formatHttpError(error);
+            setApiLog((prevState) => [
+                ...prevState,
+                { call: call, err: msg, date: new Date() }
+            ]);
+            if (status && !(error instanceof CanceledError)) {
+                setApiNotification(true);
+                setApiMessage({
+                    type: 'error',
+                    title: `${call.title} failed`,
+                    msg: formatApiFailure(call, msg)
+                });
+            }
+        },
+        [status]
+    );
 
     const fetchStatus = useCallback(async () => {
         const call = api.getStatus('Fetching Status');
@@ -98,7 +106,7 @@ function App() {
             return;
         }
         if (!status || newStatus.id !== status.id) {
-            document.title = `Feng Shui - ${newStatus.id}`;
+            document.title = `ENVITE - ${newStatus.id}`;
         }
         if (!status || isDifferentStatus(newStatus, status)) {
             setStatus(newStatus);
@@ -224,16 +232,63 @@ function App() {
         getOutputContinuously().then();
     }, [getOutputContinuously]);
 
+    const runningComponents = countRunningComponents(status);
     return (
         <div className="App">
             <ThemeProvider theme={theme}>
                 <header>
-                    <h1>Feng Shui</h1>
-                    <span>
-                        {status
-                            ? status.id
-                            : 'integration system for dev and ci'}
-                    </span>
+                    <div>
+                        <img
+                            className="logo"
+                            src="/logo-small.svg"
+                            alt="envite logo"
+                        />
+                        <span className="sub-title">
+                            {status
+                                ? status.id
+                                : 'dev environments for testing and continuous integration'}
+                        </span>
+                    </div>
+                    <div className="action-bar">
+                        <Tooltip title="View log">
+                            <IconButton
+                                className="action-button"
+                                onClick={() => {
+                                    setApiNotification(false);
+                                    setLogDialog(true);
+                                }}
+                            >
+                                <Badge
+                                    color="error"
+                                    invisible={!apiNotification}
+                                    variant="dot"
+                                >
+                                    <FilterListIcon
+                                        fontSize="inherit"
+                                        color="inherit"
+                                    />
+                                </Badge>
+                            </IconButton>
+                        </Tooltip>
+                        <Tooltip
+                            title={`${
+                                runningComponents || 'No'
+                            } components currently running`}
+                            className={
+                                runningComponents ? 'active' : 'inactive'
+                            }
+                        >
+                            <span className="component-counter">
+                                <span className="component-counter-number">
+                                    {runningComponents}
+                                </span>
+                                <FavoriteIcon
+                                    fontSize="inherit"
+                                    color="inherit"
+                                />
+                            </span>
+                        </Tooltip>
+                    </div>
                 </header>
                 <main>
                     {status ? (
@@ -246,14 +301,6 @@ function App() {
                                 apply={apply}
                                 stopAll={() => stopAll(false)}
                                 stopAllAndClear={() => stopAll(true)}
-                                clearAllOutput={() => {
-                                    setOutput({});
-                                }}
-                                apiNotification={apiNotification}
-                                openApiLog={() => {
-                                    setApiNotification(false);
-                                    setLogDialog(true);
-                                }}
                             />
                             <MainPanel
                                 loading={apiCall !== null}
@@ -340,6 +387,19 @@ function isDifferentStatus(newStatus: Status, oldStatus: Status): boolean {
     }
 
     return false;
+}
+
+function countRunningComponents(status: Status | null) {
+    if (!status || !status.components) {
+        return 0;
+    }
+    let count = 0;
+    status.components.flat().forEach((c) => {
+        if (c.status === 'running') {
+            count++;
+        }
+    });
+    return count;
 }
 
 export default App;

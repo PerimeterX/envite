@@ -14,20 +14,61 @@ header {
     position: fixed;
     height: 50px;
     width: 100%;
-    background: linear-gradient(90deg, #2e3533 0%, #12251f 100%);
+    background: linear-gradient(90deg, #191a1c 0%, #293139 17%, #1e2328 80%, #1e2328 100%);
     box-shadow: 0 2px 6px #0000002b;
     z-index: 1;
+    line-height: 70px;
+    display: flex;
+    justify-content: space-between;
 }
 
-header h1 {
-    margin: 5px 20px;
-    display: inline-block;
-    color: #545f5c;
+header .logo {
+    height: 30px;
+    margin-left: 40px;
 }
 
-header span {
-    font-size: 14px;
-    color: #545f5c;
+header .sub-title {
+    font-size: 13px;
+    color: #00ffbb;
+    margin-left: 11px;
+    font-weight: 300;
+    position: relative;
+    top: -6px;
+}
+
+header .action-bar {
+    line-height: 50px;
+    margin-right: 20px;
+}
+
+header .action-bar .action-button {
+    color: #939393;
+    margin-right: 5px;
+}
+
+header .action-bar .inactive {
+    color: #939393;
+}
+
+header .action-bar .active {
+    color: #00ffbb;
+}
+
+.component-counter {
+    position: relative;
+    top: 5px;
+    margin: 6px;
+    font-size: 21px;
+}
+
+.component-counter-number {
+    position: absolute;
+    font-size: 10px;
+    color: black;
+    width: 100%;
+    text-align: center;
+    top: -16px;
+    font-weight: 600;
 }
 
 main {
