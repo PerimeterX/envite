@@ -343,6 +343,9 @@ function App() {
                     open={logDialog}
                     onClose={() => setLogDialog(false)}
                 />
+                {/* we cache logo-large.svg, so we're able to use it in OfflinePanel.tsx */}
+                {/* when the backend is down and can't service it */}
+                <img id="logo-large-cache" src="/logo-large.svg" alt="ENVITE Icon - large" />
             </ThemeProvider>
         </div>
     );

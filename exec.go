@@ -1,14 +1,8 @@
 package envite
 
 import (
-	"bufio"
 	"context"
 	"fmt"
-	"os"
-	"os/exec"
-	"runtime"
-	"strings"
-	"time"
 )
 
 type ExecutionMode string
@@ -43,87 +37,26 @@ func Execute(server *Server, executionMode ExecutionMode) error {
 
 		return server.env.Cleanup(context.Background())
 	case ExecutionModeDaemon:
-		go handleDaemonStart(server)
+		fmt.Printf("%s\nstarting ENVITE daemon for %s at http://localhost%s\n", asciiArt, server.env.id, server.addr)
 		return server.Start()
 	}
 	return ErrInvalidExecutionMode{v: string(executionMode)}
 }
 
 var asciiArt = `
-        ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓                                                                                                         
-     ▓▓▓▓▓           ▓▓▓▓    ▓                                                                                                  
-   ▓▓▓▓▓▓              ▓▓▓ ▓▓▓                                                                                                  
-  ▓▓▓▓▓▓▓▓              ▓▓▓▓▓       ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓  ▓▓▓▓▓      ▓▓▓▓▓▓ ▓▓▓▓▓▓        ▓▓▓▓▓▓  ▓▓  ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓  ▓▓▓▓▓▓▓▓▓▓▓▓  
- ▓▓▓▓▓▓▓▓▓▓        ▓▓▓▓▓▓▓ ▓▓▓      ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓  ▓▓▓▓▓▓▓    ▓▓▓▓▓▓ ▓▓▓▓▓▓▓      ▓▓▓▓▓▓▓  ▓▓  ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓  ▓▓▓▓▓▓▓▓▓▓▓▓  
-▓▓▓▓▓▓▓▓▓▓▓       ▓▓▓▓▓▓    ▓▓      ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓  ▓▓▓▓▓▓▓▓   ▓▓▓▓▓▓  ▓▓▓▓▓▓▓    ▓▓▓▓▓▓▓   ▓▓        ▓▓▓        ▓▓▓           
-▓▓▓▓▓▓▓▓▓▓▓    ▓▓▓▓▓▓        ▓▓     ▓▓▓▓▓▓▓          ▓▓▓▓▓▓▓▓▓▓ ▓▓▓▓▓▓  ▓▓▓▓▓▓▓▓  ▓▓▓▓▓▓▓    ▓▓        ▓▓▓        ▓▓▓           
-▓▓▓▓▓▓▓▓▓▓   ▓▓▓▓▓▓▓         ▓▓     ▓▓▓▓▓▓▓▓▓▓▓▓▓▓   ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓   ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓     ▓▓        ▓▓▓        ▓▓▓▓▓▓▓▓▓▓▓   
-▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓         ▓▓     ▓▓▓▓▓▓▓▓▓▓▓▓▓▓   ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓    ▓▓▓▓▓▓▓▓▓▓▓▓▓      ▓▓        ▓▓▓        ▓▓▓▓▓▓▓▓▓▓▓   
-▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓           ▓▓     ▓▓▓▓▓▓▓          ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓     ▓▓▓▓▓▓▓▓▓▓▓▓      ▓▓        ▓▓▓        ▓▓▓           
-▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓             ▓▓      ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓  ▓▓▓▓▓▓  ▓▓▓▓▓▓▓▓▓      ▓▓▓▓▓▓▓▓▓▓       ▓▓        ▓▓▓        ▓▓▓           
- ▓▓▓▓▓▓▓▓▓▓▓▓▓▓            ▓▓▓      ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓  ▓▓▓▓▓▓    ▓▓▓▓▓▓▓       ▓▓▓▓▓▓▓▓        ▓▓        ▓▓▓        ▓▓▓▓▓▓▓▓▓▓▓▓▓ 
-  ▓▓▓▓▓▓▓▓▓▓▓▓▓▓          ▓▓▓       ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓  ▓▓▓▓▓▓     ▓▓▓▓▓▓       ▓▓▓▓▓▓▓         ▓▓        ▓▓▓        ▓▓▓▓▓▓▓▓▓▓▓▓▓ 
-   ▓▓▓▓▓▓▓▓▓▓▓▓▓       ▓▓▓▓                                                                                                     
-      ▓▓▓▓▓▓▓▓▓▓     ▓▓▓▓                                                                                                       
-         ▓▓▓▓▓▓▓▓▓▓▓▓▓`
-
-func handleDaemonStart(server *Server) {
-	fmt.Println(asciiArt)
-	url := "http://localhost" + server.addr
-	open, err := confirmOpenBrowser(url)
-	if err != nil {
-		fmt.Println("could not confirm open browser window: ", err.Error())
-		return
-	}
-
-	if !open {
-		return
-	}
-
-	err = openBrowser(url)
-	if err != nil {
-		fmt.Println("could not open browser window: ", err.Error())
-	}
-}
-
-func confirmOpenBrowser(url string) (bool, error) {
-	fmt.Println("starting ENVITE daemon server at " + url)
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-	go func() {
-		ticker := time.NewTicker(time.Second)
-		i := 10
-		for i > 0 {
-			select {
-			case <-ticker.C:
-				fmt.Printf("\rwould you like to open a browser window? [y/N] (%d)", i)
-				i--
-			case <-ctx.Done():
-				return
-			}
-		}
-	}()
-	reader := bufio.NewReader(os.Stdin)
-	response, err := reader.ReadString('\n')
-	if err != nil {
-		return false, err
-	}
-
-	return strings.ToLower(strings.TrimSpace(response)) == "y", nil
-}
-
-func openBrowser(url string) error {
-	switch runtime.GOOS {
-	case "linux":
-		return exec.Command("xdg-open", url).Start()
-	case "windows":
-		return exec.Command("rundll32", "url.dll,FileProtocolHandler", url).Start()
-	case "darwin":
-		return exec.Command("open", url).Start()
-	default:
-		return fmt.Errorf("unsupported platform")
-	}
-}
+▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓
+▓▓ ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓  ▓▓▓▓▓      ▓▓▓▓▓▓ ▓▓▓▓▓▓        ▓▓▓▓▓▓  ▓▓  ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓  ▓▓▓▓▓▓▓▓▓▓▓▓ ▓▓
+▓▓ ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓  ▓▓▓▓▓▓▓    ▓▓▓▓▓▓ ▓▓▓▓▓▓▓      ▓▓▓▓▓▓▓  ▓▓  ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓  ▓▓▓▓▓▓▓▓▓▓▓▓ ▓▓
+▓▓ ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓  ▓▓▓▓▓▓▓▓   ▓▓▓▓▓▓  ▓▓▓▓▓▓▓    ▓▓▓▓▓▓▓   ▓▓        ▓▓▓        ▓▓▓          ▓▓
+▓▓ ▓▓▓▓▓▓▓          ▓▓▓▓▓▓▓▓▓▓ ▓▓▓▓▓▓  ▓▓▓▓▓▓▓▓  ▓▓▓▓▓▓▓    ▓▓        ▓▓▓        ▓▓▓          ▓▓
+▓▓ ▓▓▓▓▓▓▓▓▓▓▓▓▓▓   ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓   ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓     ▓▓        ▓▓▓        ▓▓▓▓▓▓▓▓▓▓▓  ▓▓
+▓▓ ▓▓▓▓▓▓▓▓▓▓▓▓▓▓   ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓    ▓▓▓▓▓▓▓▓▓▓▓▓▓      ▓▓        ▓▓▓        ▓▓▓▓▓▓▓▓▓▓▓  ▓▓
+▓▓ ▓▓▓▓▓▓▓          ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓     ▓▓▓▓▓▓▓▓▓▓▓▓      ▓▓        ▓▓▓        ▓▓▓          ▓▓
+▓▓ ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓  ▓▓▓▓▓▓  ▓▓▓▓▓▓▓▓▓      ▓▓▓▓▓▓▓▓▓▓       ▓▓        ▓▓▓        ▓▓▓          ▓▓
+▓▓ ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓  ▓▓▓▓▓▓    ▓▓▓▓▓▓▓       ▓▓▓▓▓▓▓▓        ▓▓        ▓▓▓        ▓▓▓▓▓▓▓▓▓▓▓▓ ▓▓
+▓▓ ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓  ▓▓▓▓▓▓     ▓▓▓▓▓▓       ▓▓▓▓▓▓▓         ▓▓        ▓▓▓        ▓▓▓▓▓▓▓▓▓▓▓▓ ▓▓
+▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓
+`
 
 type ErrInvalidExecutionMode struct {
 	v string
