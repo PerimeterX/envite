@@ -11,7 +11,7 @@ import (
 	"github.com/docker/docker/errdefs"
 	"github.com/docker/docker/pkg/jsonmessage"
 	"github.com/docker/docker/pkg/stdcopy"
-	"github.com/perimeterx/fengshui"
+	"github.com/perimeterx/envite"
 	"math"
 	"strings"
 	"sync"
@@ -31,8 +31,8 @@ type Component struct {
 	latestLogMessage time.Time
 	containerName    string
 	status           atomic.Value
-	blueprint        *fengshui.Blueprint
-	writer           *fengshui.Writer
+	blueprint        *envite.Blueprint
+	writer           *envite.Writer
 }
 
 func newComponent(
@@ -58,7 +58,7 @@ func newComponent(
 		containerName: containerName,
 	}
 
-	c.status.Store(fengshui.ComponentStatusStopped)
+	c.status.Store(envite.ComponentStatusStopped)
 
 	return c, nil
 }
@@ -71,7 +71,7 @@ func (c *Component) Type() string {
 	return ComponentType
 }
 
-func (c *Component) AttachBlueprint(ctx context.Context, blueprint *fengshui.Blueprint, writer *fengshui.Writer) error {
+func (c *Component) AttachBlueprint(ctx context.Context, blueprint *envite.Blueprint, writer *envite.Writer) error {
 	c.blueprint = blueprint
 	c.writer = writer
 
@@ -209,7 +209,7 @@ func (c *Component) Stop(ctx context.Context) error {
 		return err
 	}
 
-	c.status.Store(fengshui.ComponentStatusStopped)
+	c.status.Store(envite.ComponentStatusStopped)
 	return nil
 }
 
@@ -234,10 +234,10 @@ func (c *Component) Cleanup(ctx context.Context) error {
 	return err
 }
 
-func (c *Component) Status(context.Context) (fengshui.ComponentStatus, error) {
-	status := c.status.Load().(fengshui.ComponentStatus)
+func (c *Component) Status(context.Context) (envite.ComponentStatus, error) {
+	status := c.status.Load().(envite.ComponentStatus)
 
-	if status == fengshui.ComponentStatusRunning {
+	if status == envite.ComponentStatusRunning {
 		// check if container stopped
 		cont, err := c.findContainer(context.Background())
 		if err != nil {
@@ -245,8 +245,8 @@ func (c *Component) Status(context.Context) (fengshui.ComponentStatus, error) {
 		}
 
 		if cont == nil || cont.State != "running" {
-			status = fengshui.ComponentStatusStopped
-			c.status.Store(fengshui.ComponentStatusStopped)
+			status = envite.ComponentStatusStopped
+			c.status.Store(envite.ComponentStatusStopped)
 		}
 	}
 
@@ -254,20 +254,20 @@ func (c *Component) Status(context.Context) (fengshui.ComponentStatus, error) {
 }
 
 func (c *Component) monitorStartingStatus(containerID string, isNewContainer bool) {
-	c.status.Store(fengshui.ComponentStatusStarting)
+	c.status.Store(envite.ComponentStatusStarting)
 	for _, waiter := range c.runConfig.waiters {
 		err := waiter(context.Background(), c.cli, containerID, isNewContainer)
 		if err != nil {
 			// container might have been manually stopped while we waited
 			c.lock.Lock()
-			if c.status.Load() == fengshui.ComponentStatusStarting {
-				c.status.Store(fengshui.ComponentStatusFailed)
+			if c.status.Load() == envite.ComponentStatusStarting {
+				c.status.Store(envite.ComponentStatusFailed)
 			}
 			c.lock.Unlock()
 			return
 		}
 	}
-	c.status.Store(fengshui.ComponentStatusRunning)
+	c.status.Store(envite.ComponentStatusRunning)
 }
 
 func (c *Component) Config() any {
@@ -354,7 +354,7 @@ func (c *Component) writeLogs(id string) {
 		},
 	)
 	if err != nil {
-		c.Logger()(fengshui.LogLevelError, "could not read container logs for "+c.ID())
+		c.Logger()(envite.LogLevelError, "could not read container logs for "+c.ID())
 	}
 }
 
@@ -366,10 +366,10 @@ func (c *Component) ContainerName() string {
 	return c.containerName
 }
 
-func (c *Component) Writer() *fengshui.Writer {
+func (c *Component) Writer() *envite.Writer {
 	return c.writer
 }
 
-func (c *Component) Logger() fengshui.Logger {
+func (c *Component) Logger() envite.Logger {
 	return c.blueprint.Logger
 }

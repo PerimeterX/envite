@@ -1,4 +1,4 @@
-package fengshui
+package envite
 
 type Option func(*Blueprint)
 
