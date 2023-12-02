@@ -1,11 +1,13 @@
 # ENVITE
 
+![ENVITE Logo](https://raw.githubusercontent.com/PerimeterX/envite/assets/logo3.svg?token=GHSAT0AAAAAACK6DPG4JUCV4OGT2OMCPPYYZLLEDVQ)
+
 ENVITE helps define and provision environments for development, testing, and continuous integration.
 
 It's designed to allow switching between local development needs and automated environments seamlessly
 and provide the best tooling to describe, provision, and monitor integrated components.
 
-A demo screen capture can be found [here](/demo.mov).
+A demo screen capture can be found [here](https://github.com/PerimeterX/envite/raw/assets/demo.mov).
 
 ---
 
