@@ -3,7 +3,7 @@ package mongo
 import (
 	"context"
 	"fmt"
-	"github.com/perimeterx/fengshui"
+	"github.com/perimeterx/envite"
 	"go.mongodb.org/mongo-driver/mongo"
 	"strconv"
 	"sync"
@@ -17,7 +17,7 @@ type SeedComponent struct {
 	clientProvider func() (*mongo.Client, error)
 	config         SeedConfig
 	status         atomic.Value
-	writer         *fengshui.Writer
+	writer         *envite.Writer
 }
 
 func NewSeedComponent(
@@ -29,7 +29,7 @@ func NewSeedComponent(
 		config:         config,
 	}
 
-	m.status.Store(fengshui.ComponentStatusStopped)
+	m.status.Store(envite.ComponentStatusStopped)
 
 	return m
 }
@@ -42,7 +42,7 @@ func (m *SeedComponent) Type() string {
 	return ComponentType
 }
 
-func (m *SeedComponent) AttachBlueprint(_ context.Context, _ *fengshui.Blueprint, writer *fengshui.Writer) error {
+func (m *SeedComponent) AttachEnvironment(_ context.Context, _ *envite.Environment, writer *envite.Writer) error {
 	m.writer = writer
 	return nil
 }
@@ -55,15 +55,15 @@ func (m *SeedComponent) Start(ctx context.Context) error {
 	m.lock.Lock()
 	defer m.lock.Unlock()
 
-	m.status.Store(fengshui.ComponentStatusStarting)
+	m.status.Store(envite.ComponentStatusStarting)
 
 	err := m.seed(ctx)
 	if err != nil {
-		m.status.Store(fengshui.ComponentStatusFailed)
+		m.status.Store(envite.ComponentStatusFailed)
 		return err
 	}
 
-	m.status.Store(fengshui.ComponentStatusFinished)
+	m.status.Store(envite.ComponentStatusFinished)
 
 	return nil
 }
@@ -103,7 +103,7 @@ func (m *SeedComponent) seed(ctx context.Context) error {
 }
 
 func (m *SeedComponent) Stop(context.Context) error {
-	m.status.Store(fengshui.ComponentStatusStopped)
+	m.status.Store(envite.ComponentStatusStopped)
 	return nil
 }
 
@@ -111,8 +111,8 @@ func (m *SeedComponent) Cleanup(context.Context) error {
 	return nil
 }
 
-func (m *SeedComponent) Status(context.Context) (fengshui.ComponentStatus, error) {
-	return m.status.Load().(fengshui.ComponentStatus), nil
+func (m *SeedComponent) Status(context.Context) (envite.ComponentStatus, error) {
+	return m.status.Load().(envite.ComponentStatus), nil
 }
 
 func (m *SeedComponent) Config() any {

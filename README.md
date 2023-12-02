@@ -1,11 +1,13 @@
-# Feng Shui
+# ENVITE
 
-Feng Shui is an integration system for development and continuous-integration environments.
+![ENVITE Logo](https://raw.githubusercontent.com/PerimeterX/envite/assets/logo3.svg?token=GHSAT0AAAAAACK6DPG4JUCV4OGT2OMCPPYYZLLEDVQ)
+
+ENVITE helps define and provision environments for development, testing, and continuous integration.
 
 It's designed to allow switching between local development needs and automated environments seamlessly
 and provide the best tooling to describe, provision, and monitor integrated components.
 
-A demo screen capture can be found [here](/demo.mov).
+A demo screen capture can be found [here](https://github.com/PerimeterX/envite/raw/assets/demo.mov).
 
 ---
 
@@ -14,14 +16,14 @@ A demo screen capture can be found [here](/demo.mov).
 Any software that interacts with external components requires some solutions. In production environments you need
 these two components to be able to interact in a safe and secure fashion. Obviously, there are countless solutions
 for these needs such as cloud-managed products, container orchestration solutions such as Kubernetes, load balancers,
-service discovery solutions, service mesh products, and so on. Feng Shui doesn't aim to help there.
+service discovery solutions, service mesh products, and so on. ENVITE doesn't aim to help there.
 
 Next, if you want to run non-production automation such as integration testing during a CI/CD pipeline, you're going
 to need to create an environment similar to production to be able to execute these tests.
 
 Lastly, development processes require a similar environment to function properly.
 
-Feng Shui aims to help with the last 2 use cases - development, and non-production automation. It aims to make them
+ENVITE aims to help with the last 2 use cases - development, and non-production automation. It aims to make them
 completely similar to allow full reproducibility, on the one hand, and the best tooling for development needs, on the
 other hand.
 
@@ -29,8 +31,8 @@ other hand.
 
 #### So why not stick to what you use today?
 
-For starters, you might want to do that. Let's see when you actually need Feng Shui.
-Here are the popular alternatives and how they compare with Feng Shui.
+For starters, you might want to do that. Let's see when you actually need ENVITE.
+Here are the popular alternatives and how they compare with ENVITE.
 
 ##### Using Kubernetes for production, CI, and development
 
@@ -43,8 +45,8 @@ Let's talk about some possible downsides:
 to solve:
   * If you fully containerize everything, like you normally do in Kubernetes:
     * You need to solve how you debug running containers. Attaching a remote debugging session is not always easy.
-    * How do you rebuild container images each time you perform a code change. This process can take several minutes
-every time you perform any code change?
+    * How do you rebuild container images each time you perform a code change? This process can take several minutes
+every time you perform any code change.
     * How do you manage and override image tag values in your original manifest files? Does it mean you maintain
 separate manifest files for production and dev purposes?
     * Can you provide hot reloading or similar tools in environments where this is desired?
@@ -65,7 +67,7 @@ specifically for dev and CI, and the environments are not identical to productio
 
 ##### Using docker-compose for CI and development
 
-If you're not using container orchestration tools like Kubernetes in production, but you need some integration
+If you're not using container orchestration tools like Kubernetes in production, but need some integration
 between several components, this will probably be your first choice.
 
 However, it does have all the possible downsides of Kubernetes mentioned above, on top of some other ones:
@@ -95,7 +97,7 @@ engineer in the organization?
 
 ##### Using testcontainers or a similar library to write container management code for CI and development
 
-This option is quite close to Feng Shui. These tools allow you to write custom code to describe your environment,
+This option is quite close to ENVITE. These tools allow you to write custom code to describe your environment,
 so you have full control over what you can do. As with most other options, you must manage your test env separately from
 production since you don't use testcontainers in production. This means you have to maintain 2 copies, but also,
 production env can defer from your test env.
@@ -104,19 +106,19 @@ In addition, testcontainers have 2 more downsides:
 * You can only write in Java or Go.
 * testcontainers bring a LOT of dependencies.
 
-##### Can Feng Shui meet my needs?
+##### Can ENVITE meet my needs?
 
-Feng Shui is quite close to testcontainers. It allows you to either write Go, or use config files to describe your env.
+ENVITE is quite close to testcontainers. It allows you to either write Go, or use YAML files to describe your env.
 It can be used as a Go library, or as a CLI tool directly without actually writing code.
 
-Feng Shui is designed around running seamlessly inside and outside docker containers, to allow simple debugging of
+ENVITE is designed around running seamlessly inside and outside docker containers, to allow simple debugging of
 components you currently work on, while running all the rest in containers, connecting everything fluently, and
 providing you with the best tooling to manage and monitor the entire environment.
 
-At this point, you will have to manage Feng Shui files/code separately from your production environment, but we do want
+At this point, you will have to manage ENVITE files/code separately from your production environment, but we do want
 to add support to read directly from Helm and Kustomize files to allow maintaining only one copy of production env.
 
-One last thing to consider, since Feng Shui runs everything locally, you can't run too many components on your machine.
+One last thing to consider, since ENVITE runs everything locally, you can't run too many components on your machine.
 As mentioned earlier, if you need 50 components up and running to run your tests, running it all locally is not
 feasible. You will have to use multiple remote machines for that. If this is your use case, an interesting company
 that does it well is [Raftt](https://www.raftt.io/) and I suggest reading more about what they do.

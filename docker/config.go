@@ -17,8 +17,8 @@ import (
 
 // Config - Docker Component configuration
 type Config struct {
-	// Name - the name of the container, and the ID of the blueprint component
-	// Name cannot be empty
+	// Name - the name of the container. Name cannot be empty.
+	// this will also be used as the component ID of the environment.
 	Name string `json:"name" yaml:"name"`
 
 	// Env - environment variables for the container

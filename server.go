@@ -1,4 +1,4 @@
-package fengshui
+package envite
 
 import (
 	"context"
@@ -9,20 +9,20 @@ import (
 
 type Server struct {
 	addr       string
-	blueprint  *Blueprint
+	env        *Environment
 	httpServer *http.Server
 	errHandler func(string)
 }
 
-func NewServer(port string, blueprint *Blueprint) *Server {
+func NewServer(port string, env *Environment) *Server {
 	if len(port) > 0 && port[0] != ':' {
 		port = ":" + port
 	}
 
-	s := &Server{addr: port, blueprint: blueprint}
+	s := &Server{addr: port, env: env}
 
 	router := mux.NewRouter()
-	registerRoutes(router, blueprint)
+	registerRoutes(router, env)
 	s.httpServer = &http.Server{Addr: port, Handler: router}
 
 	return s

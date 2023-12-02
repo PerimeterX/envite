@@ -1,11 +1,8 @@
-package fengshui
+package envite
 
 import (
 	"context"
 	"fmt"
-	"os/exec"
-	"runtime"
-	"time"
 )
 
 type ExecutionMode string
@@ -31,40 +28,35 @@ func ParseExecutionMode(value string) (ExecutionMode, error) {
 func Execute(server *Server, executionMode ExecutionMode) error {
 	switch executionMode {
 	case ExecutionModeStart:
-		return server.blueprint.StartAll(context.Background())
+		return server.env.StartAll(context.Background())
 	case ExecutionModeStop:
-		err := server.blueprint.StopAll(context.Background())
+		err := server.env.StopAll(context.Background())
 		if err != nil {
 			return err
 		}
 
-		return server.blueprint.Cleanup(context.Background())
+		return server.env.Cleanup(context.Background())
 	case ExecutionModeDaemon:
-		go func() {
-			time.Sleep(time.Second * 2)
-			err := openBrowser("http://localhost" + server.addr)
-			if err != nil {
-				server.errHandler(fmt.Sprintf("could not open browser window: %s", err.Error()))
-			}
-		}()
-
+		fmt.Printf("%s\nstarting ENVITE daemon for %s at http://localhost%s\n", asciiArt, server.env.id, server.addr)
 		return server.Start()
 	}
 	return ErrInvalidExecutionMode{v: string(executionMode)}
 }
 
-func openBrowser(url string) error {
-	switch runtime.GOOS {
-	case "linux":
-		return exec.Command("xdg-open", url).Start()
-	case "windows":
-		return exec.Command("rundll32", "url.dll,FileProtocolHandler", url).Start()
-	case "darwin":
-		return exec.Command("open", url).Start()
-	default:
-		return fmt.Errorf("unsupported platform")
-	}
-}
+var asciiArt = `
+▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓
+▓▓ ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓  ▓▓▓▓▓      ▓▓▓▓▓▓ ▓▓▓▓▓▓        ▓▓▓▓▓▓  ▓▓  ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓  ▓▓▓▓▓▓▓▓▓▓▓▓ ▓▓
+▓▓ ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓  ▓▓▓▓▓▓▓    ▓▓▓▓▓▓ ▓▓▓▓▓▓▓      ▓▓▓▓▓▓▓  ▓▓  ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓  ▓▓▓▓▓▓▓▓▓▓▓▓ ▓▓
+▓▓ ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓  ▓▓▓▓▓▓▓▓   ▓▓▓▓▓▓  ▓▓▓▓▓▓▓    ▓▓▓▓▓▓▓   ▓▓        ▓▓▓        ▓▓▓          ▓▓
+▓▓ ▓▓▓▓▓▓▓          ▓▓▓▓▓▓▓▓▓▓ ▓▓▓▓▓▓  ▓▓▓▓▓▓▓▓  ▓▓▓▓▓▓▓    ▓▓        ▓▓▓        ▓▓▓          ▓▓
+▓▓ ▓▓▓▓▓▓▓▓▓▓▓▓▓▓   ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓   ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓     ▓▓        ▓▓▓        ▓▓▓▓▓▓▓▓▓▓▓  ▓▓
+▓▓ ▓▓▓▓▓▓▓▓▓▓▓▓▓▓   ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓    ▓▓▓▓▓▓▓▓▓▓▓▓▓      ▓▓        ▓▓▓        ▓▓▓▓▓▓▓▓▓▓▓  ▓▓
+▓▓ ▓▓▓▓▓▓▓          ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓     ▓▓▓▓▓▓▓▓▓▓▓▓      ▓▓        ▓▓▓        ▓▓▓          ▓▓
+▓▓ ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓  ▓▓▓▓▓▓  ▓▓▓▓▓▓▓▓▓      ▓▓▓▓▓▓▓▓▓▓       ▓▓        ▓▓▓        ▓▓▓          ▓▓
+▓▓ ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓  ▓▓▓▓▓▓    ▓▓▓▓▓▓▓       ▓▓▓▓▓▓▓▓        ▓▓        ▓▓▓        ▓▓▓▓▓▓▓▓▓▓▓▓ ▓▓
+▓▓ ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓  ▓▓▓▓▓▓     ▓▓▓▓▓▓       ▓▓▓▓▓▓▓         ▓▓        ▓▓▓        ▓▓▓▓▓▓▓▓▓▓▓▓ ▓▓
+▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓
+`
 
 type ErrInvalidExecutionMode struct {
 	v string
