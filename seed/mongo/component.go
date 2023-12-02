@@ -42,7 +42,7 @@ func (m *SeedComponent) Type() string {
 	return ComponentType
 }
 
-func (m *SeedComponent) AttachBlueprint(_ context.Context, _ *envite.Blueprint, writer *envite.Writer) error {
+func (m *SeedComponent) AttachEnvironment(_ context.Context, _ *envite.Environment, writer *envite.Writer) error {
 	m.writer = writer
 	return nil
 }

@@ -1,6 +1,6 @@
 package envite
 
-type Option func(*Blueprint)
+type Option func(*Environment)
 
 type Logger func(level LogLevel, message string)
 
@@ -15,7 +15,7 @@ const (
 )
 
 func WithLogger(logger Logger) Option {
-	return func(b *Blueprint) {
+	return func(b *Environment) {
 		b.Logger = logger
 	}
 }

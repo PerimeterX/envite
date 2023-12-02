@@ -23,7 +23,7 @@ const ComponentType = "docker component"
 
 type Component struct {
 	lock             sync.Mutex
-	blueprintID      string
+	envID            string
 	cli              *client.Client
 	config           Config
 	runConfig        *runConfig
@@ -31,13 +31,13 @@ type Component struct {
 	latestLogMessage time.Time
 	containerName    string
 	status           atomic.Value
-	blueprint        *envite.Blueprint
+	env              *envite.Environment
 	writer           *envite.Writer
 }
 
 func newComponent(
 	cli *client.Client,
-	blueprintID string,
+	envID string,
 	network *Network,
 	config Config,
 ) (*Component, error) {
@@ -46,13 +46,13 @@ func newComponent(
 		return nil, err
 	}
 
-	containerName := fmt.Sprintf("%s_%s", blueprintID, config.Name)
+	containerName := fmt.Sprintf("%s_%s", envID, config.Name)
 	network.configure(config, runConf, containerName)
 
 	c := &Component{
 		cli:           cli,
 		config:        config,
-		blueprintID:   blueprintID,
+		envID:         envID,
 		runConfig:     runConf,
 		network:       network,
 		containerName: containerName,
@@ -71,8 +71,8 @@ func (c *Component) Type() string {
 	return ComponentType
 }
 
-func (c *Component) AttachBlueprint(ctx context.Context, blueprint *envite.Blueprint, writer *envite.Writer) error {
-	c.blueprint = blueprint
+func (c *Component) AttachEnvironment(ctx context.Context, env *envite.Environment, writer *envite.Writer) error {
+	c.env = env
 	c.writer = writer
 
 	cont, err := c.findContainer(ctx)
@@ -371,5 +371,5 @@ func (c *Component) Writer() *envite.Writer {
 }
 
 func (c *Component) Logger() envite.Logger {
-	return c.blueprint.Logger
+	return c.env.Logger
 }

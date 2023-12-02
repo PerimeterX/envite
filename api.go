@@ -26,18 +26,18 @@ const (
 	failedToReadBody               = "failed to read body"
 )
 
-func registerRoutes(router *mux.Router, blueprint *Blueprint) {
-	apiRoute(router, http.MethodGet, "/status", getStatusHandler{blueprint: blueprint})
-	apiRoute(router, http.MethodPost, "/start_component", postStartHandler{blueprint: blueprint})
-	apiRoute(router, http.MethodPost, "/stop_component", postStopHandler{blueprint: blueprint})
-	apiRoute(router, http.MethodPost, "/apply", postApplyHandler{blueprint: blueprint})
-	apiRoute(router, http.MethodPost, "/stop_all", postStopAllHandler{blueprint: blueprint})
-	apiRoute(router, http.MethodGet, "/output", getOutputHandler{blueprint: blueprint})
+func registerRoutes(router *mux.Router, env *Environment) {
+	apiRoute(router, http.MethodGet, "/status", getStatusHandler{env: env})
+	apiRoute(router, http.MethodPost, "/start_component", postStartHandler{env: env})
+	apiRoute(router, http.MethodPost, "/stop_component", postStopHandler{env: env})
+	apiRoute(router, http.MethodPost, "/apply", postApplyHandler{env: env})
+	apiRoute(router, http.MethodPost, "/stop_all", postStopAllHandler{env: env})
+	apiRoute(router, http.MethodGet, "/output", getOutputHandler{env: env})
 	router.PathPrefix("/").Handler(newWebHandler())
 }
 
 type getStatusHandler struct {
-	blueprint *Blueprint
+	env *Environment
 }
 
 type GetStatusResponse struct {
@@ -54,17 +54,17 @@ type GetStatusResponseComponent struct {
 }
 
 func (g getStatusHandler) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
-	status, err := g.blueprint.Status(request.Context())
+	status, err := g.env.Status(request.Context())
 	if err != nil {
-		apiError(g.blueprint, writer, err.Error(), http.StatusInternalServerError)
+		apiError(g.env, writer, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	apiSuccess(g.blueprint, writer, status, http.StatusOK)
+	apiSuccess(g.env, writer, status, http.StatusOK)
 }
 
 type postApplyHandler struct {
-	blueprint *Blueprint
+	env *Environment
 }
 
 type postApplyRequest struct {
@@ -75,21 +75,21 @@ var x = 0
 
 func (p postApplyHandler) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
 	body := postApplyRequest{}
-	if !apiParse(p.blueprint, writer, request, &body) {
+	if !apiParse(p.env, writer, request, &body) {
 		return
 	}
 
-	err := p.blueprint.Apply(request.Context(), body.EnabledComponentIDs)
+	err := p.env.Apply(request.Context(), body.EnabledComponentIDs)
 	if err != nil {
-		apiError(p.blueprint, writer, err.Error(), http.StatusInternalServerError)
+		apiError(p.env, writer, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	apiSuccess(p.blueprint, writer, nil, http.StatusOK)
+	apiSuccess(p.env, writer, nil, http.StatusOK)
 }
 
 type postStopAllHandler struct {
-	blueprint *Blueprint
+	env *Environment
 }
 
 type postStopAllRequest struct {
@@ -98,29 +98,29 @@ type postStopAllRequest struct {
 
 func (p postStopAllHandler) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
 	body := postStopAllRequest{}
-	if !apiParse(p.blueprint, writer, request, &body) {
+	if !apiParse(p.env, writer, request, &body) {
 		return
 	}
 
-	err := p.blueprint.StopAll(request.Context())
+	err := p.env.StopAll(request.Context())
 	if err != nil {
-		apiError(p.blueprint, writer, err.Error(), http.StatusInternalServerError)
+		apiError(p.env, writer, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
 	if body.Cleanup {
-		err = p.blueprint.Cleanup(request.Context())
+		err = p.env.Cleanup(request.Context())
 		if err != nil {
-			apiError(p.blueprint, writer, err.Error(), http.StatusInternalServerError)
+			apiError(p.env, writer, err.Error(), http.StatusInternalServerError)
 			return
 		}
 	}
 
-	apiSuccess(p.blueprint, writer, nil, http.StatusOK)
+	apiSuccess(p.env, writer, nil, http.StatusOK)
 }
 
 type postStartHandler struct {
-	blueprint *Blueprint
+	env *Environment
 }
 
 type postStartRequest struct {
@@ -129,21 +129,21 @@ type postStartRequest struct {
 
 func (p postStartHandler) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
 	body := postStartRequest{}
-	if !apiParse(p.blueprint, writer, request, &body) {
+	if !apiParse(p.env, writer, request, &body) {
 		return
 	}
 
-	err := p.blueprint.StartComponent(request.Context(), body.ComponentID)
+	err := p.env.StartComponent(request.Context(), body.ComponentID)
 	if err != nil {
-		apiError(p.blueprint, writer, err.Error(), http.StatusInternalServerError)
+		apiError(p.env, writer, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	apiSuccess(p.blueprint, writer, nil, http.StatusOK)
+	apiSuccess(p.env, writer, nil, http.StatusOK)
 }
 
 type postStopHandler struct {
-	blueprint *Blueprint
+	env *Environment
 }
 
 type postStopRequest struct {
@@ -152,26 +152,26 @@ type postStopRequest struct {
 
 func (p postStopHandler) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
 	body := postStopRequest{}
-	if !apiParse(p.blueprint, writer, request, &body) {
+	if !apiParse(p.env, writer, request, &body) {
 		return
 	}
 
-	err := p.blueprint.StopComponent(request.Context(), body.ComponentID)
+	err := p.env.StopComponent(request.Context(), body.ComponentID)
 	if err != nil {
-		apiError(p.blueprint, writer, err.Error(), http.StatusInternalServerError)
+		apiError(p.env, writer, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	apiSuccess(p.blueprint, writer, nil, http.StatusOK)
+	apiSuccess(p.env, writer, nil, http.StatusOK)
 }
 
 type getOutputHandler struct {
-	blueprint *Blueprint
+	env *Environment
 }
 
 func (g getOutputHandler) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
 	writer.Header().Set(accessControl, accessControlValue)
-	reader := g.blueprint.Output()
+	reader := g.env.Output()
 
 	ch := reader.Chan()
 
@@ -181,7 +181,7 @@ func (g getOutputHandler) ServeHTTP(writer http.ResponseWriter, request *http.Re
 			_, err := writer.Write(data)
 			if err != nil {
 				if !errors.Is(err, context.Canceled) {
-					g.blueprint.Logger(LogLevelError, fmt.Sprintf("could not write output stream response: %v", err))
+					g.env.Logger(LogLevelError, fmt.Sprintf("could not write output stream response: %v", err))
 				}
 				continue
 			}
@@ -192,7 +192,7 @@ func (g getOutputHandler) ServeHTTP(writer http.ResponseWriter, request *http.Re
 			err := reader.Close()
 			if err != nil {
 				if !errors.Is(err, context.Canceled) {
-					g.blueprint.Logger(LogLevelError, fmt.Sprintf("could not close output reader: %v", err))
+					g.env.Logger(LogLevelError, fmt.Sprintf("could not close output reader: %v", err))
 				}
 			}
 			return
@@ -200,7 +200,7 @@ func (g getOutputHandler) ServeHTTP(writer http.ResponseWriter, request *http.Re
 	}
 }
 
-func apiParse(b *Blueprint, writer http.ResponseWriter, request *http.Request, target any) bool {
+func apiParse(b *Environment, writer http.ResponseWriter, request *http.Request, target any) bool {
 	if strings.ToLower(request.Header.Get(contentType)) != applicationJSON {
 		apiError(b, writer, invalidContentType, http.StatusBadRequest)
 		return false
@@ -228,7 +228,7 @@ type apiErrorResponse struct {
 	Error string `json:"error"`
 }
 
-func apiError(b *Blueprint, writer http.ResponseWriter, error string, status int) {
+func apiError(b *Environment, writer http.ResponseWriter, error string, status int) {
 	if status >= 500 && !strings.Contains(error, "context canceled") {
 		b.Logger(LogLevelError, fmt.Sprintf("failed to serve request with status %d: %s", status, error))
 	}
@@ -251,7 +251,7 @@ func apiError(b *Blueprint, writer http.ResponseWriter, error string, status int
 	}
 }
 
-func apiSuccess(b *Blueprint, writer http.ResponseWriter, body any, status int) {
+func apiSuccess(b *Environment, writer http.ResponseWriter, body any, status int) {
 	var data []byte
 	if body == nil {
 		data = []byte(`{}`)

@@ -7,7 +7,7 @@ import (
 type Component interface {
 	ID() string
 	Type() string
-	AttachBlueprint(ctx context.Context, blueprint *Blueprint, writer *Writer) error
+	AttachEnvironment(ctx context.Context, env *Environment, writer *Writer) error
 	Prepare(ctx context.Context) error
 	Start(ctx context.Context) error
 	Stop(ctx context.Context) error

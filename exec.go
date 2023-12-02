@@ -1,10 +1,13 @@
 package envite
 
 import (
+	"bufio"
 	"context"
 	"fmt"
+	"os"
 	"os/exec"
 	"runtime"
+	"strings"
 	"time"
 )
 
@@ -31,26 +34,82 @@ func ParseExecutionMode(value string) (ExecutionMode, error) {
 func Execute(server *Server, executionMode ExecutionMode) error {
 	switch executionMode {
 	case ExecutionModeStart:
-		return server.blueprint.StartAll(context.Background())
+		return server.env.StartAll(context.Background())
 	case ExecutionModeStop:
-		err := server.blueprint.StopAll(context.Background())
+		err := server.env.StopAll(context.Background())
 		if err != nil {
 			return err
 		}
 
-		return server.blueprint.Cleanup(context.Background())
+		return server.env.Cleanup(context.Background())
 	case ExecutionModeDaemon:
-		go func() {
-			time.Sleep(time.Second * 2)
-			err := openBrowser("http://localhost" + server.addr)
-			if err != nil {
-				server.errHandler(fmt.Sprintf("could not open browser window: %s", err.Error()))
-			}
-		}()
-
+		go handleDaemonStart(server)
 		return server.Start()
 	}
 	return ErrInvalidExecutionMode{v: string(executionMode)}
+}
+
+var asciiArt = `
+        ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓                                                                                                         
+     ▓▓▓▓▓           ▓▓▓▓    ▓                                                                                                  
+   ▓▓▓▓▓▓              ▓▓▓ ▓▓▓                                                                                                  
+  ▓▓▓▓▓▓▓▓              ▓▓▓▓▓       ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓  ▓▓▓▓▓      ▓▓▓▓▓▓ ▓▓▓▓▓▓        ▓▓▓▓▓▓  ▓▓  ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓  ▓▓▓▓▓▓▓▓▓▓▓▓  
+ ▓▓▓▓▓▓▓▓▓▓        ▓▓▓▓▓▓▓ ▓▓▓      ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓  ▓▓▓▓▓▓▓    ▓▓▓▓▓▓ ▓▓▓▓▓▓▓      ▓▓▓▓▓▓▓  ▓▓  ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓  ▓▓▓▓▓▓▓▓▓▓▓▓  
+▓▓▓▓▓▓▓▓▓▓▓       ▓▓▓▓▓▓    ▓▓      ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓  ▓▓▓▓▓▓▓▓   ▓▓▓▓▓▓  ▓▓▓▓▓▓▓    ▓▓▓▓▓▓▓   ▓▓        ▓▓▓        ▓▓▓           
+▓▓▓▓▓▓▓▓▓▓▓    ▓▓▓▓▓▓        ▓▓     ▓▓▓▓▓▓▓          ▓▓▓▓▓▓▓▓▓▓ ▓▓▓▓▓▓  ▓▓▓▓▓▓▓▓  ▓▓▓▓▓▓▓    ▓▓        ▓▓▓        ▓▓▓           
+▓▓▓▓▓▓▓▓▓▓   ▓▓▓▓▓▓▓         ▓▓     ▓▓▓▓▓▓▓▓▓▓▓▓▓▓   ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓   ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓     ▓▓        ▓▓▓        ▓▓▓▓▓▓▓▓▓▓▓   
+▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓         ▓▓     ▓▓▓▓▓▓▓▓▓▓▓▓▓▓   ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓    ▓▓▓▓▓▓▓▓▓▓▓▓▓      ▓▓        ▓▓▓        ▓▓▓▓▓▓▓▓▓▓▓   
+▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓           ▓▓     ▓▓▓▓▓▓▓          ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓     ▓▓▓▓▓▓▓▓▓▓▓▓      ▓▓        ▓▓▓        ▓▓▓           
+▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓             ▓▓      ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓  ▓▓▓▓▓▓  ▓▓▓▓▓▓▓▓▓      ▓▓▓▓▓▓▓▓▓▓       ▓▓        ▓▓▓        ▓▓▓           
+ ▓▓▓▓▓▓▓▓▓▓▓▓▓▓            ▓▓▓      ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓  ▓▓▓▓▓▓    ▓▓▓▓▓▓▓       ▓▓▓▓▓▓▓▓        ▓▓        ▓▓▓        ▓▓▓▓▓▓▓▓▓▓▓▓▓ 
+  ▓▓▓▓▓▓▓▓▓▓▓▓▓▓          ▓▓▓       ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓  ▓▓▓▓▓▓     ▓▓▓▓▓▓       ▓▓▓▓▓▓▓         ▓▓        ▓▓▓        ▓▓▓▓▓▓▓▓▓▓▓▓▓ 
+   ▓▓▓▓▓▓▓▓▓▓▓▓▓       ▓▓▓▓                                                                                                     
+      ▓▓▓▓▓▓▓▓▓▓     ▓▓▓▓                                                                                                       
+         ▓▓▓▓▓▓▓▓▓▓▓▓▓`
+
+func handleDaemonStart(server *Server) {
+	fmt.Println(asciiArt)
+	url := "http://localhost" + server.addr
+	open, err := confirmOpenBrowser(url)
+	if err != nil {
+		fmt.Println("could not confirm open browser window: ", err.Error())
+		return
+	}
+
+	if !open {
+		return
+	}
+
+	err = openBrowser(url)
+	if err != nil {
+		fmt.Println("could not open browser window: ", err.Error())
+	}
+}
+
+func confirmOpenBrowser(url string) (bool, error) {
+	fmt.Println("starting ENVITE daemon server at " + url)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	go func() {
+		ticker := time.NewTicker(time.Second)
+		i := 10
+		for i > 0 {
+			select {
+			case <-ticker.C:
+				fmt.Printf("\rwould you like to open a browser window? [y/N] (%d)", i)
+				i--
+			case <-ctx.Done():
+				return
+			}
+		}
+	}()
+	reader := bufio.NewReader(os.Stdin)
+	response, err := reader.ReadString('\n')
+	if err != nil {
+		return false, err
+	}
+
+	return strings.ToLower(strings.TrimSpace(response)) == "y", nil
 }
 
 func openBrowser(url string) error {
