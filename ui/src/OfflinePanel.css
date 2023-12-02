@@ -2,13 +2,17 @@
     height: 100%;
     width: 100%;
     background: linear-gradient(90deg, rgb(9 10 10) 0%, rgb(17 19 25) 100%);
-    box-shadow: inset 2px 0px 6px #00000078;
-    color: #737373;
+    box-shadow: inset 2px 0 6px #00000078;
     padding: 100px;
     text-align: center;
+    color: #b3b3b3;
+    font-size: 14px;
 }
 
 .OfflinePanel .icon {
-    font-size: 90px;
-    color: #232323;
+    margin-bottom: 20px;
+}
+
+.OfflinePanel .icon img {
+    width: 260px;
 }

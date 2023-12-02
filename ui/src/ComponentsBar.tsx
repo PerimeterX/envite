@@ -2,7 +2,7 @@ import React, { useEffect, useRef } from 'react';
 import './ComponentsBar.css';
 import { ApiCall, Status } from './api';
 import ComponentBox from './ComponentBox';
-import { Badge, Button, IconButton, Tooltip } from '@mui/material';
+import { Button } from '@mui/material';
 import PowerSettingsNewIcon from '@mui/icons-material/PowerSettingsNew';
 import SendIcon from '@mui/icons-material/Send';
 import CancelScheduleSendIcon from '@mui/icons-material/CancelScheduleSend';
@@ -11,7 +11,6 @@ import ComponentBoxHeader from './ComponentBoxHeader';
 import { useNavigate } from 'react-router-dom';
 import SplitButton from './SplitButton';
 import Loader from './Loader';
-import EditNoteIcon from '@mui/icons-material/EditNote';
 
 interface ComponentsBarProps {
     apiCall: ApiCall<any> | null;
@@ -21,9 +20,6 @@ interface ComponentsBarProps {
     apply: () => void;
     stopAll: () => void;
     stopAllAndClear: () => void;
-    clearAllOutput: () => void;
-    apiNotification: boolean;
-    openApiLog: () => void;
 }
 
 function ComponentsBar(props: ComponentsBarProps) {
@@ -115,25 +111,7 @@ function ComponentsBar(props: ComponentsBarProps) {
                     </>
                 ) : (
                     <>
-                        <div className="view-log-holder">
-                            <Tooltip title="View log">
-                                <IconButton
-                                    size="small"
-                                    onClick={props.openApiLog}
-                                >
-                                    <Badge
-                                        color="error"
-                                        invisible={!props.apiNotification}
-                                        variant="dot"
-                                    >
-                                        <EditNoteIcon
-                                            fontSize="inherit"
-                                            color="inherit"
-                                        />
-                                    </Badge>
-                                </IconButton>
-                            </Tooltip>
-                        </div>
+                        <div />
                         <div>
                             <SplitButton
                                 variant="outlined"

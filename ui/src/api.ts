@@ -1,6 +1,6 @@
 import axios, { CancelTokenSource } from 'axios';
 
-const BASE_URL = process.env.REACT_APP_BASE_URL || ''; // = 'http://localhost:8080';
+const BASE_URL = process.env.REACT_APP_BASE_URL || '';
 
 export interface Status {
     id: string;
@@ -198,5 +198,19 @@ async function callRestart(componentId: string, canceler: Canceler) {
         BASE_URL + '/start_component',
         { component_id: componentId },
         { cancelToken: canceler.cancelSource.token }
+    );
+}
+
+export function getUrl() {
+    if (BASE_URL) {
+        return BASE_URL;
+    }
+
+    return (
+        window.location.protocol +
+        '//' +
+        window.location.host +
+        '/' +
+        window.location.pathname.split('/')[1]
     );
 }
