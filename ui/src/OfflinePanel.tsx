@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import './OfflinePanel.css';
-import WifiOffIcon from '@mui/icons-material/WifiOff';
 import Loader from './Loader';
+import { getUrl } from './api';
 
 function OfflinePanel() {
     const [loading, setLoading] = useState(true);
@@ -17,10 +17,10 @@ function OfflinePanel() {
             ) : (
                 <>
                     <div className="icon">
-                        <WifiOffIcon fontSize="inherit" />
+                        <img src="/logo-large.svg" alt="ENVITE Icon - large" />
                     </div>
-                    <div>You seem offline</div>
-                    <div>Check if Feng Shui server is up and running...</div>
+                    <div>ENVITE is not reachable at {getUrl()}</div>
+                    <div>Make sure ENVITE server is running</div>
                 </>
             )}
         </div>
