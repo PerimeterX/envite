@@ -24,16 +24,32 @@ type Network struct {
 	lock         sync.Mutex
 	shouldDelete bool
 	configure    func(config Config, runConfig *runConfig, containerName string)
+
+	keepStoppedContainers bool
 }
 
-func NewNetwork(cli *client.Client, networkIdentifier, envID string) (*Network, error) {
+func NewNetwork(cli *client.Client, networkIdentifier, envID string, options ...Option) (*Network, error) {
+	var (
+		n   *Network
+		err error
+	)
+
 	if networkIdentifier != "" {
-		return newClosedNetwork(cli, envID, networkIdentifier)
+		n, err = newClosedNetwork(cli, envID, networkIdentifier)
 	} else if runtime.GOOS == "linux" {
-		return newOpenLinuxNetwork(cli, envID)
+		n, err = newOpenLinuxNetwork(cli, envID)
 	} else {
-		return newOpenNetwork(cli, envID)
+		n, err = newOpenNetwork(cli, envID)
 	}
+	if err != nil {
+		return nil, err
+	}
+
+	for _, option := range options {
+		option(n)
+	}
+
+	return n, nil
 }
 
 func (n *Network) NewComponent(config Config) (*Component, error) {
