@@ -30,6 +30,7 @@ type Component struct {
 	network          *Network
 	latestLogMessage time.Time
 	containerName    string
+	imageCloneTag    string
 	status           atomic.Value
 	env              *envite.Environment
 	writer           *envite.Writer
@@ -41,7 +42,8 @@ func newComponent(
 	network *Network,
 	config Config,
 ) (*Component, error) {
-	runConf, err := config.initialize(network)
+	imageCloneTag := fmt.Sprintf("%s_%s", config.Image, envID)
+	runConf, err := config.initialize(network, imageCloneTag)
 	if err != nil {
 		return nil, err
 	}
@@ -56,6 +58,7 @@ func newComponent(
 		runConfig:     runConf,
 		network:       network,
 		containerName: containerName,
+		imageCloneTag: imageCloneTag,
 	}
 
 	c.status.Store(envite.ComponentStatusStopped)
@@ -99,6 +102,17 @@ func (c *Component) Prepare(ctx context.Context) error {
 		}
 	}
 
+	err := c.pullImage(ctx)
+	if err != nil {
+		return err
+	}
+
+	// create a dedicated copy of the docker image to prevent
+	// other environments running concurrently from removing our image.
+	return c.cli.ImageTag(ctx, c.config.Image, c.imageCloneTag)
+}
+
+func (c *Component) pullImage(ctx context.Context) error {
 	if c.config.ImagePullOptions != nil && c.config.ImagePullOptions.Disabled {
 		c.Writer().WriteString(fmt.Sprintf("image pull disabled"))
 		return nil
@@ -217,21 +231,31 @@ func (c *Component) Cleanup(ctx context.Context) error {
 	c.lock.Lock()
 	defer c.lock.Unlock()
 
+	err := c.removeImage(ctx)
+	if err != nil {
+		return err
+	}
+
+	return c.network.delete(ctx, c)
+}
+
+func (c *Component) removeImage(ctx context.Context) error {
+	_, err := c.cli.ImageRemove(ctx, c.imageCloneTag, types.ImageRemoveOptions{})
+	if err != nil {
+		return err
+	}
+
 	if c.config.ImagePullOptions != nil && c.config.ImagePullOptions.Disabled {
 		c.Writer().WriteString(fmt.Sprintf("image remove disabled"))
 		return nil
 	}
 
-	_, err := c.cli.ImageRemove(ctx, c.config.Image, types.ImageRemoveOptions{})
-	if errdefs.IsNotFound(err) {
-		return nil
-	}
-
-	err = c.network.delete(ctx, c)
-	if err != nil {
+	_, err = c.cli.ImageRemove(ctx, c.config.Image, types.ImageRemoveOptions{})
+	if err != nil && !errdefs.IsNotFound(err) {
 		return err
 	}
-	return err
+
+	return nil
 }
 
 func (c *Component) Status(context.Context) (envite.ComponentStatus, error) {
