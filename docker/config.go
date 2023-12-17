@@ -583,7 +583,7 @@ type runConfig struct {
 	waiters          []waiterFunc
 }
 
-func (c Config) initialize(network *Network) (*runConfig, error) {
+func (c Config) initialize(network *Network, imageCloneTag string) (*runConfig, error) {
 	if c.Name == "" {
 		return nil, ErrInvalidConfig{Property: "name", Msg: "cannot be empty"}
 	}
@@ -607,7 +607,7 @@ func (c Config) initialize(network *Network) (*runConfig, error) {
 	}
 
 	result := &runConfig{
-		containerConfig: c.containerConfig(),
+		containerConfig: c.containerConfig(imageCloneTag),
 		hostConfig:      c.hostConfig(network),
 		platformConfig:  c.PlatformConfig.build(),
 		waiters:         waiters,
@@ -640,7 +640,7 @@ func (c Config) imagePullOptions() (types.ImagePullOptions, error) {
 	return result, nil
 }
 
-func (c Config) containerConfig() *container.Config {
+func (c Config) containerConfig(imageCloneTag string) *container.Config {
 	env := make([]string, 0, len(c.Env))
 	for key, value := range c.Env {
 		env = append(env, fmt.Sprintf("%s=%s", key, value))
@@ -661,7 +661,7 @@ func (c Config) containerConfig() *container.Config {
 		Cmd:             strslice.StrSlice(c.Cmd),
 		Healthcheck:     c.Healthcheck.build(),
 		ArgsEscaped:     c.ArgsEscaped,
-		Image:           c.Image,
+		Image:           imageCloneTag,
 		Volumes:         c.Volumes,
 		WorkingDir:      c.WorkingDir,
 		Entrypoint:      strslice.StrSlice(c.Entrypoint),
