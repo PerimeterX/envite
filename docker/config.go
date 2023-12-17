@@ -699,7 +699,7 @@ func (c Config) hostConfig(network *Network) *container.HostConfig {
 		ContainerIDFile: c.ContainerIDFile,
 		LogConfig:       c.LogConfig.build(),
 		RestartPolicy:   c.RestartPolicy.build(),
-		AutoRemove:      !network.keepStoppedContainers,
+		AutoRemove:      !network.KeepStoppedContainers,
 		VolumeDriver:    c.VolumeDriver,
 		VolumesFrom:     c.VolumesFrom,
 		ConsoleSize:     consoleSize,
