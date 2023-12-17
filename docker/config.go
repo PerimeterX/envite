@@ -583,7 +583,7 @@ type runConfig struct {
 	waiters          []waiterFunc
 }
 
-func (c Config) initialize() (*runConfig, error) {
+func (c Config) initialize(network *Network) (*runConfig, error) {
 	if c.Name == "" {
 		return nil, ErrInvalidConfig{Property: "name", Msg: "cannot be empty"}
 	}
@@ -608,7 +608,7 @@ func (c Config) initialize() (*runConfig, error) {
 
 	result := &runConfig{
 		containerConfig: c.containerConfig(),
-		hostConfig:      c.hostConfig(),
+		hostConfig:      c.hostConfig(network),
 		platformConfig:  c.PlatformConfig.build(),
 		waiters:         waiters,
 	}
@@ -689,7 +689,7 @@ func (c *Healthcheck) build() *container.HealthConfig {
 	}
 }
 
-func (c Config) hostConfig() *container.HostConfig {
+func (c Config) hostConfig(network *Network) *container.HostConfig {
 	var consoleSize [2]uint
 	if len(c.ConsoleSize) > 0 {
 		consoleSize = [2]uint{c.ConsoleSize[0], c.ConsoleSize[1]}
@@ -699,7 +699,7 @@ func (c Config) hostConfig() *container.HostConfig {
 		ContainerIDFile: c.ContainerIDFile,
 		LogConfig:       c.LogConfig.build(),
 		RestartPolicy:   c.RestartPolicy.build(),
-		AutoRemove:      true,
+		AutoRemove:      !network.keepStoppedContainers,
 		VolumeDriver:    c.VolumeDriver,
 		VolumesFrom:     c.VolumesFrom,
 		ConsoleSize:     consoleSize,

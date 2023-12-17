@@ -41,7 +41,7 @@ func newComponent(
 	network *Network,
 	config Config,
 ) (*Component, error) {
-	runConf, err := config.initialize()
+	runConf, err := config.initialize(network)
 	if err != nil {
 		return nil, err
 	}
