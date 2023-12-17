@@ -16,47 +16,32 @@ import (
 )
 
 type Network struct {
-	Client         *client.Client
-	envID          string
-	ID             string
-	OnNewComponent func(*Config)
-
+	client       *client.Client
+	envID        string
+	ID           string
 	lock         sync.Mutex
 	shouldDelete bool
 	configure    func(config Config, runConfig *runConfig, containerName string)
 
-	keepStoppedContainers bool
+	OnNewComponent        func(*Config)
+	KeepStoppedContainers bool
 }
 
-func NewNetwork(cli *client.Client, networkIdentifier, envID string, options ...Option) (*Network, error) {
-	var (
-		n   *Network
-		err error
-	)
-
+func NewNetwork(cli *client.Client, networkIdentifier, envID string) (*Network, error) {
 	if networkIdentifier != "" {
-		n, err = newClosedNetwork(cli, envID, networkIdentifier)
+		return newClosedNetwork(cli, envID, networkIdentifier)
 	} else if runtime.GOOS == "linux" {
-		n, err = newOpenLinuxNetwork(cli, envID)
+		return newOpenLinuxNetwork(cli, envID)
 	} else {
-		n, err = newOpenNetwork(cli, envID)
+		return newOpenNetwork(cli, envID)
 	}
-	if err != nil {
-		return nil, err
-	}
-
-	for _, option := range options {
-		option(n)
-	}
-
-	return n, nil
 }
 
 func (n *Network) NewComponent(config Config) (*Component, error) {
 	if n.OnNewComponent != nil {
 		n.OnNewComponent(&config)
 	}
-	return newComponent(n.Client, n.envID, n, config)
+	return newComponent(n.client, n.envID, n, config)
 }
 
 func newClosedNetwork(cli *client.Client, envID, networkIdentifier string) (*Network, error) {
@@ -71,7 +56,7 @@ func newClosedNetwork(cli *client.Client, envID, networkIdentifier string) (*Net
 	}
 
 	return &Network{
-		Client:       cli,
+		client:       cli,
 		envID:        envID,
 		shouldDelete: false,
 		ID:           nw.ID,
@@ -92,7 +77,7 @@ func newOpenLinuxNetwork(cli *client.Client, envID string) (*Network, error) {
 	}
 
 	return &Network{
-		Client:       cli,
+		client:       cli,
 		envID:        envID,
 		shouldDelete: true,
 		ID:           id,
@@ -118,7 +103,7 @@ func newOpenNetwork(cli *client.Client, envID string) (*Network, error) {
 	}
 
 	return &Network{
-		Client:       cli,
+		client:       cli,
 		envID:        envID,
 		shouldDelete: true,
 		ID:           id,
