@@ -2,6 +2,7 @@ package envite
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"golang.org/x/sync/errgroup"
 	"strings"
@@ -15,21 +16,26 @@ type Environment struct {
 	Logger         Logger
 }
 
-func NewEnvironment(id string, components [][]Component, options ...Option) (*Environment, error) {
+func NewEnvironment(id string, componentGraph *ComponentGraph, options ...Option) (*Environment, error) {
 	if id == "" {
-		id = "generic_environment"
+		return nil, ErrEmptyEnvID
 	}
+
+	if componentGraph == nil {
+		return nil, ErrNilGraph
+	}
+
 	id = strings.ReplaceAll(id, " ", "_")
 
 	om := newOutputManager()
 	b := &Environment{
 		id:             id,
-		components:     components,
+		components:     componentGraph.components,
 		componentsByID: make(map[string]Component),
 		outputManager:  om,
 	}
 
-	for _, concurrentComponents := range components {
+	for _, concurrentComponents := range componentGraph.components {
 		for _, component := range concurrentComponents {
 			componentID := component.ID()
 			if componentID == "" {
@@ -319,6 +325,11 @@ func (b *Environment) componentByID(componentID string) (Component, error) {
 	}
 	return component, nil
 }
+
+var (
+	ErrEmptyEnvID = errors.New("environment ID cannot be empty")
+	ErrNilGraph   = errors.New("environment component graph cannot be nil")
+)
 
 type ErrInvalidComponentID struct {
 	id  string

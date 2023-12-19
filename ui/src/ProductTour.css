@@ -1,0 +1,29 @@
+.ProductTour {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    background: radial-gradient(circle at 300px 94%, rgb(0 0 0 / 0%) 0%, rgb(0 0 0 / 75%) 7%, rgb(0 0 0 / 100%) 100%);
+    z-index: 2;
+}
+
+.ProductTour .content {
+    color: #e0e0e0;
+    font-size: 15px;
+    font-weight: 500;
+    max-width: 760px;
+    float: right;
+    margin: 50px;
+    padding: 30px;
+    background: #0000009e;
+    border-radius: 40px;
+    box-shadow: 1px 1px 9px 0 #000000c7;
+}
+
+.ProductTour .marked {
+    color: #00ffbb;
+}
+
+.ProductTour .actions {
+    margin-top: 30px;
+    text-align: right;
+}

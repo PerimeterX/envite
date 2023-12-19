@@ -4,22 +4,54 @@
     flex-direction: column;
 }
 
-.ComponentPanel .title {
+.ComponentPanel .header {
+    background: linear-gradient(90deg, rgb(17 17 19) 0%, rgb(30 36 43) 20%, #1e2328 100%);
+    border-bottom: 1px solid #2e2e2e;
     display: flex;
     justify-content: space-between;
+}
+
+.ComponentPanel .title-control {
+    padding-left: 8px;
+    padding-top: 8px;
+    display: flex;
+}
+
+.ComponentPanel .back-button {
+    margin-right: 8px;
+}
+
+.ComponentPanel .component-details {
+    margin-top: 7px;
+}
+
+.ComponentPanel .component-name {
+    font-size: 20px;
+    text-transform: uppercase;
     color: #00ffbb;
-    background: linear-gradient(90deg, rgb(17 17 19) 0%, rgb(30 36 43) 20%, #1e2328 100%);
-    border-bottom: 1px solid #232323;
+    font-weight: 700;
+}
+
+.ComponentPanel .component-status {
+    font-size: 12px;
+    color: #939393;
+    margin-left: 7px;
+}
+
+.ComponentPanel .back-icon {
+    color: #00ffbb;
 }
 
 .ComponentPanel .actions {
     padding: 15px;
 }
 
+.ComponentPanel .tabs {
+    padding-left: 43px;
+}
+
 .ComponentPanel .tab {
-    width: 160px;
     color: #939393;
-    padding: 21px;
 }
 
 .ComponentPanel .component-title {
