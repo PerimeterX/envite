@@ -1,0 +1,4 @@
+Hey there 👋
+It seems to be the first time you're running envite with docker.
+We need to install a quick change. To do it, rerun the process using sudo.
+If you prefer, you can manually add `127.0.0.1 host.docker.internal` to `/etc/hosts` and then rerun without sudo.

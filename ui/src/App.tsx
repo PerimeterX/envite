@@ -24,6 +24,7 @@ import ApiLogDialog, {
 } from './ApiLogDialog';
 import FilterListIcon from '@mui/icons-material/FilterList';
 import FavoriteIcon from '@mui/icons-material/Favorite';
+import ProductTour, { ProductTourProps } from './ProductTour';
 
 const REFRESH_STATUS_INTERVAL = 5000;
 
@@ -54,6 +55,8 @@ function App() {
     const [apiNotification, setApiNotification] = useState(false);
     const [apiLog, setApiLog] = useState<ApiLogEntry[]>([]);
     const [logDialog, setLogDialog] = useState(false);
+    const [productTourProps, setProductTourProps] =
+        useState<ProductTourProps | null>(null);
 
     const handleCloseApiMessage = useCallback(
         (_?: React.SyntheticEvent | Event, reason?: string) => {
@@ -122,8 +125,25 @@ function App() {
         }
     }, [reportApiError, enabledIds, status]);
 
+    const showProductTour = useCallback(() => {
+        if (completedTour()) {
+            return Promise.resolve();
+        }
+        return new Promise((resolve) => {
+            setProductTourProps({
+                open: true,
+                close: () => {
+                    tourCompleted();
+                    setProductTourProps(null);
+                    resolve(null);
+                }
+            });
+        });
+    }, [setProductTourProps]);
+
     const startComponent = useCallback(
         async (id: string) => {
+            await showProductTour();
             const call = api.startComponent(`Starting ${id}`, id);
             setApiCall(call);
             try {
@@ -135,11 +155,12 @@ function App() {
             reportApiSuccess(call);
             await fetchStatus();
         },
-        [fetchStatus, reportApiError, reportApiSuccess]
+        [fetchStatus, reportApiError, reportApiSuccess, showProductTour]
     );
 
     const stopComponent = useCallback(
         async (id: string) => {
+            await showProductTour();
             const call = api.stopComponent(`Stopping ${id}`, id);
             setApiCall(call);
             try {
@@ -151,11 +172,12 @@ function App() {
             reportApiSuccess(call);
             await fetchStatus();
         },
-        [fetchStatus, reportApiError, reportApiSuccess]
+        [fetchStatus, reportApiError, reportApiSuccess, showProductTour]
     );
 
     const restartComponent = useCallback(
         async (id: string) => {
+            await showProductTour();
             const call = api.restartComponent(`Restarting ${id}`, id);
             setApiCall(call);
             try {
@@ -167,7 +189,7 @@ function App() {
             reportApiSuccess(call);
             await fetchStatus();
         },
-        [fetchStatus, reportApiError, reportApiSuccess]
+        [fetchStatus, reportApiError, reportApiSuccess, showProductTour]
     );
 
     const apply = useCallback(async () => {
@@ -343,9 +365,14 @@ function App() {
                     open={logDialog}
                     onClose={() => setLogDialog(false)}
                 />
+                {productTourProps && <ProductTour {...productTourProps} />}
                 {/* we cache logo-large.svg, so we're able to use it in OfflinePanel.tsx */}
                 {/* when the backend is down and can't service it */}
-                <img id="logo-large-cache" src="/logo-large.svg" alt="ENVITE Icon - large" />
+                <img
+                    id="logo-large-cache"
+                    src="/logo-large.svg"
+                    alt="ENVITE Icon - large"
+                />
             </ThemeProvider>
         </div>
     );
@@ -403,6 +430,16 @@ function countRunningComponents(status: Status | null) {
         }
     });
     return count;
+}
+
+const PRODUCT_TOUR_STORAGE_KEY = 'product-tour';
+
+function completedTour() {
+    return Boolean(localStorage.getItem(PRODUCT_TOUR_STORAGE_KEY));
+}
+
+function tourCompleted() {
+    localStorage.setItem(PRODUCT_TOUR_STORAGE_KEY, '1');
 }
 
 export default App;

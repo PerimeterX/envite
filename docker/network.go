@@ -2,6 +2,7 @@ package docker
 
 import (
 	"context"
+	_ "embed"
 	"fmt"
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
@@ -30,11 +31,11 @@ type Network struct {
 func NewNetwork(cli *client.Client, networkIdentifier, envID string) (*Network, error) {
 	if networkIdentifier != "" {
 		return newClosedNetwork(cli, envID, networkIdentifier)
-	} else if runtime.GOOS == "linux" {
-		return newOpenLinuxNetwork(cli, envID)
-	} else {
-		return newOpenNetwork(cli, envID)
 	}
+	if runtime.GOOS == "linux" {
+		return newOpenLinuxNetwork(cli, envID)
+	}
+	return newOpenNetwork(cli, envID)
 }
 
 func (n *Network) NewComponent(config Config) (*Component, error) {
@@ -172,6 +173,12 @@ func findNetwork(networks []types.NetworkResource, identifier string) (types.Net
 	return types.NetworkResource{}, ErrNetworkNotExist{network: identifier}
 }
 
+//go:embed setup-needed.txt
+var setupNeeded string
+
+//go:embed setup-finished.txt
+var setupFinished string
+
 func validateHostsFile() error {
 	valid, err := isHostsFileValid()
 	if err != nil {
@@ -183,24 +190,20 @@ func validateHostsFile() error {
 	}
 
 	err = updateHostsFile()
-	if err != nil {
-		if strings.Contains(err.Error(), "permission denied") {
-			fmt.Println("missing permissions to add a required entry to /etc/hosts file.\n" +
-				"without it, docker networking will not work as expected.\n" +
-				"to fix that, either rerun with sudo permissions, " +
-				"or manually add the following line to your /etc/hosts file:\n" +
-				"127.0.0.1 host.docker.internal\n" +
-				"and then rerun normally.")
-			os.Exit(1)
-		}
-
-		return err
+	if err == nil {
+		fmt.Println(setupFinished)
+		os.Exit(0)
 	}
 
-	return nil
+	if strings.Contains(err.Error(), "permission denied") {
+		fmt.Println(setupNeeded)
+		os.Exit(1)
+	}
+
+	return err
 }
 
-var hostsEntryRE = regexp.MustCompile(`127\.0\.0\.1\s+host\.docker\.internal`)
+var hostsEntryRE = regexp.MustCompile(`^\s*127\.0\.0\.1\s+host\.docker\.internal\s*$`)
 
 func isHostsFileValid() (bool, error) {
 	data, err := os.ReadFile("/etc/hosts")
@@ -224,7 +227,7 @@ func updateHostsFile() error {
 		return err
 	}
 
-	_, err = f.WriteString("127.0.0.1 host.docker.internal\n")
+	_, err = f.WriteString("\n# To allow envite to create open docker networks\n127.0.0.1 host.docker.internal\n# End of section\n")
 	if err != nil {
 		_ = f.Close()
 		return err

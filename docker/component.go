@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/docker/docker/api/types"
+	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/filters"
 	"github.com/docker/docker/client"
 	"github.com/docker/docker/errdefs"
@@ -218,8 +219,13 @@ func (c *Component) Stop(ctx context.Context) error {
 		return nil
 	}
 
-	err = c.cli.ContainerRemove(ctx, cont.ID, types.ContainerRemoveOptions{Force: true})
+	err = c.cli.ContainerStop(ctx, cont.ID, container.StopOptions{})
 	if err != nil {
+		return err
+	}
+
+	err = c.cli.ContainerRemove(ctx, cont.ID, types.ContainerRemoveOptions{Force: true})
+	if err != nil && !errdefs.IsNotFound(err) {
 		return err
 	}
 
