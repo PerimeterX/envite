@@ -1,7 +1,7 @@
 import React from 'react';
 import './ComponentPanel.css';
 import { Message, Component } from './api';
-import { Button, Tab, Tabs } from '@mui/material';
+import { Button, IconButton, Tab, Tabs, Tooltip } from '@mui/material';
 import PowerSettingsNewIcon from '@mui/icons-material/PowerSettingsNew';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import RestartAltIcon from '@mui/icons-material/RestartAlt';
@@ -16,6 +16,7 @@ import {
     Routes,
     useNavigate
 } from 'react-router-dom';
+import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 
 interface ComponentPanelProps {
     loading: boolean;
@@ -51,34 +52,55 @@ function ComponentPanel(props: ComponentPanelProps) {
 
     return (
         <div className="ComponentPanel">
-            <div className="title">
+            <div className="header">
                 <div>
-                    <Tabs value={routeMatch?.pattern?.path}>
-                        <Tab
-                            className="tab"
-                            iconPosition="start"
-                            label="Output"
-                            value={`/${props.component.id}`}
-                            to={`/${props.component.id}`}
-                            component={NavLink}
-                        />
-                        <Tab
-                            className="tab"
-                            iconPosition="start"
-                            label="Info"
-                            value={`/${props.component.id}/info`}
-                            to={`/${props.component.id}/info`}
-                            component={NavLink}
-                        />
-                        <Tab
-                            className="tab"
-                            iconPosition="start"
-                            label="Env Vars"
-                            value={`/${props.component.id}/env`}
-                            to={`/${props.component.id}/env`}
-                            component={NavLink}
-                        />
-                    </Tabs>
+                    <div className="title-control">
+                        <div className="back-button">
+                            <Tooltip title="Back to all logs">
+                                <NavLink to={`/`}>
+                                    <IconButton className="back-icon">
+                                        <ArrowBackIcon color="inherit" />
+                                    </IconButton>
+                                </NavLink>
+                            </Tooltip>
+                        </div>
+                        <div className="component-details">
+                            <span className="component-name">
+                                {props.component.id}
+                            </span>
+                            <span className="component-status">
+                                {props.component.status}
+                            </span>
+                        </div>
+                    </div>
+                    <div className="tabs">
+                        <Tabs value={routeMatch?.pattern?.path}>
+                            <Tab
+                                className="tab"
+                                iconPosition="start"
+                                label="Output"
+                                value={`/${props.component.id}`}
+                                to={`/${props.component.id}`}
+                                component={NavLink}
+                            />
+                            <Tab
+                                className="tab"
+                                iconPosition="start"
+                                label="Info"
+                                value={`/${props.component.id}/info`}
+                                to={`/${props.component.id}/info`}
+                                component={NavLink}
+                            />
+                            <Tab
+                                className="tab"
+                                iconPosition="start"
+                                label="Env Vars"
+                                value={`/${props.component.id}/env`}
+                                to={`/${props.component.id}/env`}
+                                component={NavLink}
+                            />
+                        </Tabs>
+                    </div>
                 </div>
                 <div className="actions">
                     <Button
