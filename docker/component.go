@@ -225,7 +225,7 @@ func (c *Component) Stop(ctx context.Context) error {
 	}
 
 	err = c.cli.ContainerRemove(ctx, cont.ID, types.ContainerRemoveOptions{Force: true})
-	if err != nil && !errdefs.IsNotFound(err) {
+	if err != nil && !errdefs.IsNotFound(err) && !errdefs.IsConflict(err) {
 		return err
 	}
 
