@@ -1,3 +1,7 @@
+// Copyright 2024 HUMAN. All rights reserved.
+// Use of this source code is governed by a MIT style
+// license that can be found in the LICENSE file.
+
 package envite
 
 import (
@@ -8,6 +12,8 @@ import (
 	"strings"
 )
 
+// Environment represents a collection of components that can be managed together.
+// Components within an environment can be started, stopped, and configured collectively or individually.
 type Environment struct {
 	id             string
 	components     [][]Component
@@ -16,6 +22,8 @@ type Environment struct {
 	Logger         Logger
 }
 
+// NewEnvironment creates and initializes a new Environment with the specified id and component graph.
+// It returns an error if the id is empty, the graph is nil, or if any components are misconfigured.
 func NewEnvironment(id string, componentGraph *ComponentGraph, options ...Option) (*Environment, error) {
 	if id == "" {
 		return nil, ErrEmptyEnvID
@@ -69,6 +77,7 @@ func NewEnvironment(id string, componentGraph *ComponentGraph, options ...Option
 	return b, nil
 }
 
+// Components returns a slice of all components within the environment.
 func (b *Environment) Components() []Component {
 	result := make([]Component, 0, len(b.componentsByID))
 	for _, component := range b.componentsByID {
@@ -77,6 +86,9 @@ func (b *Environment) Components() []Component {
 	return result
 }
 
+// Apply applies the specified configuration to the environment, enabling only the components with IDs in
+// enabledComponentIDs.
+// It returns an error if applying the configuration fails.
 func (b *Environment) Apply(ctx context.Context, enabledComponentIDs []string) error {
 	b.Logger(LogLevelInfo, "applying state")
 	enabledComponents := make(map[string]struct{}, len(enabledComponentIDs))
@@ -92,6 +104,8 @@ func (b *Environment) Apply(ctx context.Context, enabledComponentIDs []string) e
 	return nil
 }
 
+// StartAll starts all components in the environment concurrently.
+// It returns an error if starting any component fails.
 func (b *Environment) StartAll(ctx context.Context) error {
 	b.Logger(LogLevelInfo, "starting all")
 	all := make(map[string]struct{}, len(b.componentsByID))
@@ -107,6 +121,8 @@ func (b *Environment) StartAll(ctx context.Context) error {
 	return nil
 }
 
+// StopAll stops all components in the environment in reverse order of their startup.
+// It returns an error if stopping any component fails.
 func (b *Environment) StopAll(ctx context.Context) error {
 	b.Logger(LogLevelInfo, "stopping all")
 	for i := len(b.components) - 1; i >= 0; i-- {
@@ -134,6 +150,9 @@ func (b *Environment) StopAll(ctx context.Context) error {
 	return nil
 }
 
+// StartComponent starts a single component identified by componentID.
+// It does nothing if the component is already running.
+// Returns an error if the component fails to start.
 func (b *Environment) StartComponent(ctx context.Context, componentID string) error {
 	component, err := b.componentByID(componentID)
 	if err != nil {
@@ -165,6 +184,8 @@ func (b *Environment) StartComponent(ctx context.Context, componentID string) er
 	return nil
 }
 
+// StopComponent stops a single component identified by componentID.
+// Returns an error if the component fails to stop.
 func (b *Environment) StopComponent(ctx context.Context, componentID string) error {
 	component, err := b.componentByID(componentID)
 	if err != nil {
@@ -181,6 +202,7 @@ func (b *Environment) StopComponent(ctx context.Context, componentID string) err
 	return nil
 }
 
+// Status returns the current status of all components within the environment.
 func (b *Environment) Status(ctx context.Context) (GetStatusResponse, error) {
 	result := GetStatusResponse{ID: b.id, Components: make([][]GetStatusResponseComponent, len(b.components))}
 	for i, concurrentComponents := range b.components {
@@ -203,10 +225,13 @@ func (b *Environment) Status(ctx context.Context) (GetStatusResponse, error) {
 	return result, nil
 }
 
+// Output returns a reader for the environment's combined output from all components.
 func (b *Environment) Output() *Reader {
 	return b.outputManager.reader()
 }
 
+// Cleanup performs cleanup operations for all components within the environment.
+// It returns an error if cleaning up any component fails.
 func (b *Environment) Cleanup(ctx context.Context) error {
 	b.Logger(LogLevelInfo, "cleaning up")
 	g, ctx := errgroup.WithContext(ctx)
@@ -327,10 +352,14 @@ func (b *Environment) componentByID(componentID string) (Component, error) {
 }
 
 var (
+	// ErrEmptyEnvID indicates that an empty environment ID was provided.
 	ErrEmptyEnvID = errors.New("environment ID cannot be empty")
-	ErrNilGraph   = errors.New("environment component graph cannot be nil")
+
+	// ErrNilGraph indicates that a nil component graph was provided.
+	ErrNilGraph = errors.New("environment component graph cannot be nil")
 )
 
+// ErrInvalidComponentID represents an error when a component ID is invalid.
 type ErrInvalidComponentID struct {
 	id  string
 	msg string

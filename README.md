@@ -11,7 +11,7 @@ A demo screen capture can be found [here](https://github.com/PerimeterX/envite/r
 
 ---
 
-## Motivation
+## Why ENVITE?
 
 Any software that interacts with external components requires some solutions. In production environments you need
 these two components to be able to interact in a safe and secure fashion. Obviously, there are countless solutions
@@ -31,7 +31,7 @@ other hand.
 
 #### So why not stick to what you use today?
 
-For starters, you might want to do that. Let's see when you actually need ENVITE.
+For starters, you might want to do that. Let's see when you **actually** need ENVITE.
 Here are the popular alternatives and how they compare with ENVITE.
 
 ##### Using Kubernetes for production, CI, and development

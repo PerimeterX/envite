@@ -1,3 +1,7 @@
+// Copyright 2024 HUMAN. All rights reserved.
+// Use of this source code is governed by a MIT style
+// license that can be found in the LICENSE file.
+
 package docker
 
 import (
@@ -16,6 +20,12 @@ import (
 	"sync"
 )
 
+// Network represents a Docker network.
+// To create Docker components you must first create a Docker Network, then call NewComponent.
+// example:
+//
+//	network, err := NewNetwork(cli, networkID, envID)
+//	component, err := network.NewComponent(dockerComponentConfig)
 type Network struct {
 	client       *client.Client
 	envID        string
@@ -28,9 +38,14 @@ type Network struct {
 	KeepStoppedContainers bool
 }
 
-func NewNetwork(cli *client.Client, networkIdentifier, envID string) (*Network, error) {
-	if networkIdentifier != "" {
-		return newClosedNetwork(cli, envID, networkIdentifier)
+// NewNetwork creates a new Docker network with given network id and environment id.
+// If networkID is not empty, it will look for an existing network with the given id and attach new components to it.
+// If networkID is empty, it will create a new open docker network depending on the OS you're running on:
+//   - On linux, it will create a network with mode "host" and attach new components to it.
+//   - On other types of OS, it will create a network in mode "bridge" and expose ports for all components.
+func NewNetwork(cli *client.Client, networkID, envID string) (*Network, error) {
+	if networkID != "" {
+		return newClosedNetwork(cli, envID, networkID)
 	}
 	if runtime.GOOS == "linux" {
 		return newOpenLinuxNetwork(cli, envID)
@@ -38,6 +53,7 @@ func NewNetwork(cli *client.Client, networkIdentifier, envID string) (*Network, 
 	return newOpenNetwork(cli, envID)
 }
 
+// NewComponent creates a new Docker component within the network.
 func (n *Network) NewComponent(config Config) (*Component, error) {
 	if n.OnNewComponent != nil {
 		n.OnNewComponent(&config)
@@ -131,6 +147,9 @@ func newOpenNetwork(cli *client.Client, envID string) (*Network, error) {
 	}, nil
 }
 
+// delete tries to remove the network.
+// Silently fails if components are still attached to it, or it has already deleted.
+// Returns other errors if encountered.
 func (n *Network) delete(ctx context.Context, c *Component) error {
 	if !n.shouldDelete {
 		return nil
@@ -179,6 +198,7 @@ var setupNeeded string
 //go:embed setup-finished.txt
 var setupFinished string
 
+// validateHostsFile installs necessary steps to /etc/hosts if needed
 func validateHostsFile() error {
 	valid, err := isHostsFileValid()
 	if err != nil {

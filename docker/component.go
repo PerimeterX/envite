@@ -1,3 +1,7 @@
+// Copyright 2024 HUMAN. All rights reserved.
+// Use of this source code is governed by a MIT style
+// license that can be found in the LICENSE file.
+
 package docker
 
 import (
@@ -20,8 +24,10 @@ import (
 	"time"
 )
 
+// ComponentType is the type identifier for the Docker component.
 const ComponentType = "docker component"
 
+// Component represents a Docker container as a component in the ENVITE environment.
 type Component struct {
 	lock             sync.Mutex
 	envID            string
@@ -37,6 +43,8 @@ type Component struct {
 	writer           *envite.Writer
 }
 
+// newComponent creates a new Docker component.
+// docker components must be instantiated via a Network.
 func newComponent(
 	cli *client.Client,
 	envID string,
@@ -75,6 +83,7 @@ func (c *Component) Type() string {
 	return ComponentType
 }
 
+// AttachEnvironment attaches the environment, writer, and starts the log and starting status monitoring routines.
 func (c *Component) AttachEnvironment(ctx context.Context, env *envite.Environment, writer *envite.Writer) error {
 	c.env = env
 	c.writer = writer
@@ -93,6 +102,7 @@ func (c *Component) AttachEnvironment(ctx context.Context, env *envite.Environme
 	return nil
 }
 
+// Prepare prepares the Docker component by executing any pre-startup actions specified in the configuration.
 func (c *Component) Prepare(ctx context.Context) error {
 	c.lock.Lock()
 	defer c.lock.Unlock()
@@ -113,6 +123,7 @@ func (c *Component) Prepare(ctx context.Context) error {
 	return c.cli.ImageTag(ctx, c.config.Image, c.imageCloneTag)
 }
 
+// pullImage pulls the Docker image specified in the configuration.
 func (c *Component) pullImage(ctx context.Context) error {
 	if c.config.ImagePullOptions != nil && c.config.ImagePullOptions.Disabled {
 		c.Writer().WriteString(fmt.Sprintf("image pull disabled"))
@@ -308,6 +319,7 @@ func (c *Component) EnvVars() map[string]string {
 	return c.config.Env
 }
 
+// Exec executes a command in the Docker container.
 func (c *Component) Exec(ctx context.Context, cmd []string) (int, error) {
 	cont, err := c.findContainer(ctx)
 	if err != nil {
@@ -388,18 +400,22 @@ func (c *Component) writeLogs(id string) {
 	}
 }
 
+// Host returns the hostname of the Docker component.
 func (c *Component) Host() string {
 	return c.runConfig.hostname
 }
 
+// ContainerName returns the name of the Docker container.
 func (c *Component) ContainerName() string {
 	return c.containerName
 }
 
+// Writer returns the writer associated with the Docker component.
 func (c *Component) Writer() *envite.Writer {
 	return c.writer
 }
 
+// Logger returns the logger associated with the Docker component.
 func (c *Component) Logger() envite.Logger {
 	return c.env.Logger
 }

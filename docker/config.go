@@ -1,3 +1,7 @@
+// Copyright 2024 HUMAN. All rights reserved.
+// Use of this source code is governed by a MIT style
+// license that can be found in the LICENSE file.
+
 package docker
 
 import (
@@ -15,7 +19,7 @@ import (
 	"time"
 )
 
-// Config - Docker Component configuration
+// Config represents Docker Component configuration
 type Config struct {
 	// Name - the name of the container. Name cannot be empty.
 	// this will also be used as the component ID of the environment.
@@ -224,6 +228,7 @@ type Config struct {
 	PlatformConfig *PlatformConfig `json:"platform_config,omitempty" yaml:"platform_config,omitempty"`
 }
 
+// Port represents a single port to expose
 type Port struct {
 	// Port to expose
 	Port string `json:"port,omitempty" yaml:"port,omitempty"`
@@ -232,19 +237,8 @@ type Port struct {
 	Protocol string `json:"protocol,omitempty" yaml:"protocol,omitempty"`
 }
 
-type WaiterType string
-
-const (
-	// WaiterTypeString - waits for a log line to contain a string value
-	WaiterTypeString WaiterType = "string"
-
-	// WaiterTypeRegex - waits for a log line to match a regex
-	WaiterTypeRegex WaiterType = "regex"
-
-	// WaiterTypeDuration - waits for a certain amount of time
-	WaiterTypeDuration WaiterType = "duration"
-)
-
+// Waiter represents a Docker component waiter config.
+// A Waiter waits for a docker component to meet a certain condition before finishing its startup.
 type Waiter struct {
 	// Type - WaiterType type to use
 	Type WaiterType `json:"type,omitempty" yaml:"type,omitempty"`
@@ -264,6 +258,21 @@ type Waiter struct {
 	Duration string `json:"duration,omitempty" yaml:"duration,omitempty"`
 }
 
+// WaiterType represents a type of Docker component waiter.
+type WaiterType string
+
+const (
+	// WaiterTypeString - waits for a log line to contain a string value
+	WaiterTypeString WaiterType = "string"
+
+	// WaiterTypeRegex - waits for a log line to match a regex
+	WaiterTypeRegex WaiterType = "regex"
+
+	// WaiterTypeDuration - waits for a certain amount of time
+	WaiterTypeDuration WaiterType = "duration"
+)
+
+// ImagePullOptions allow specifying Docker image pull related configs.
 type ImagePullOptions struct {
 	// Disabled allow disabling image pull/remove
 	// this is useful when the image already exists on the machine and we want it to remain after cleanup
@@ -289,6 +298,7 @@ type ImagePullOptions struct {
 	RegistryAuthFunc func() (string, error) `json:"-" yaml:"-"`
 }
 
+// Healthcheck allow specifying Docker healthcheck config.
 type Healthcheck struct {
 	// Test - used for https://github.com/moby/moby/blob/v24.0.6/api/types/container/config.go#L44
 	Test []string `json:"test,omitempty" yaml:"test,omitempty"`
@@ -306,6 +316,7 @@ type Healthcheck struct {
 	Retries int `json:"retries,omitempty" yaml:"retries,omitempty"`
 }
 
+// LogConfig allow specifying Docker logs config.
 type LogConfig struct {
 	// Type - used for https://github.com/moby/moby/blob/v24.0.6/api/types/container/hostconfig.go#L321
 	Type string `json:"type,omitempty" yaml:"type,omitempty"`
@@ -314,6 +325,7 @@ type LogConfig struct {
 	Config map[string]string `json:"config,omitempty" yaml:"config,omitempty"`
 }
 
+// RestartPolicy allow specifying Docker restart policy config.
 type RestartPolicy struct {
 	// Name - used for https://github.com/moby/moby/blob/v24.0.6/api/types/container/hostconfig.go#L274
 	Name string
@@ -322,6 +334,7 @@ type RestartPolicy struct {
 	MaximumRetryCount int
 }
 
+// Resources allow specifying Docker resources config.
 type Resources struct {
 	// CPUShares - used for https://github.com/moby/moby/blob/v24.0.6/api/types/container/hostconfig.go#L328
 	CPUShares int64 `json:"cpu_shares,omitempty" yaml:"cpu_shares,omitempty"`
@@ -414,6 +427,7 @@ type Resources struct {
 	IOMaximumBandwidth uint64 `json:"io_maximum_bandwidth,omitempty" yaml:"io_maximum_bandwidth,omitempty"`
 }
 
+// WeightDevice allow specifying Docker weight device config.
 type WeightDevice struct {
 	// Path - used for https://github.com/moby/moby/blob/v24.0.6/api/types/blkiodev/blkio.go#L7
 	Path string `json:"path,omitempty" yaml:"path,omitempty"`
@@ -422,6 +436,7 @@ type WeightDevice struct {
 	Weight uint16 `json:"weight,omitempty" yaml:"weight,omitempty"`
 }
 
+// ThrottleDevice allow specifying Docker throttle device config.
 type ThrottleDevice struct {
 	// Path - used for https://github.com/moby/moby/blob/v24.0.6/api/types/blkiodev/blkio.go#L17
 	Path string `json:"path,omitempty" yaml:"path,omitempty"`
@@ -430,6 +445,7 @@ type ThrottleDevice struct {
 	Rate uint64 `json:"rate,omitempty" yaml:"rate,omitempty"`
 }
 
+// DeviceMapping allow specifying Docker device mapping config.
 type DeviceMapping struct {
 	// PathOnHost - used for https://github.com/moby/moby/blob/v24.0.6/api/types/container/hostconfig.go#L267
 	PathOnHost string `json:"path_on_host,omitempty" yaml:"path_on_host,omitempty"`
@@ -441,6 +457,7 @@ type DeviceMapping struct {
 	CgroupPermissions string `json:"cgroup_permissions,omitempty" yaml:"cgroup_permissions,omitempty"`
 }
 
+// DeviceRequest allow specifying Docker device request config.
 type DeviceRequest struct {
 	// Driver - used for https://github.com/moby/moby/blob/v24.0.6/api/types/container/hostconfig.go#L258
 	Driver string `json:"driver,omitempty" yaml:"driver,omitempty"`
@@ -458,6 +475,7 @@ type DeviceRequest struct {
 	Options map[string]string `json:"options,omitempty" yaml:"options,omitempty"`
 }
 
+// Ulimit allow specifying Docker ulimit config.
 type Ulimit struct {
 	// Name - used for https://github.com/docker/go-units/blob/master/ulimit.go#L11
 	Name string `json:"name,omitempty" yaml:"name,omitempty"`
@@ -469,6 +487,7 @@ type Ulimit struct {
 	Soft int64 `json:"soft,omitempty" yaml:"soft,omitempty"`
 }
 
+// Mount allow specifying a Docker mount.
 type Mount struct {
 	// Type - used for https://github.com/moby/moby/blob/v24.0.6/api/types/mount/mount.go#L26
 	Type mount.Type `json:"type,omitempty" yaml:"type,omitempty"`
@@ -500,6 +519,7 @@ type Mount struct {
 	OnMount func() `json:"-" yaml:"-"`
 }
 
+// BindOptions allow specifying Docker bind params for a Docker Mount.
 type BindOptions struct {
 	// Propagation - used for https://github.com/moby/moby/blob/v24.0.6/api/types/mount/mount.go#L85
 	Propagation mount.Propagation `json:"propagation,omitempty" yaml:"propagation,omitempty"`
@@ -511,6 +531,7 @@ type BindOptions struct {
 	CreateMountpoint bool `json:"create_mountpoint,omitempty" yaml:"create_mountpoint,omitempty"`
 }
 
+// VolumeOptions allow specifying Docker volume params for a Docker Mount.
 type VolumeOptions struct {
 	// NoCopy - used for https://github.com/moby/moby/blob/v24.0.6/api/types/mount/mount.go#L92
 	NoCopy bool `json:"no_copy,omitempty" yaml:"no_copy,omitempty"`
@@ -522,6 +543,7 @@ type VolumeOptions struct {
 	DriverConfig *Driver `json:"driver_config,omitempty" yaml:"driver_config,omitempty"`
 }
 
+// Driver allow specifying Docker Driver.
 type Driver struct {
 	// Name - used for https://github.com/moby/moby/blob/v24.0.6/api/types/mount/mount.go#L99
 	Name string `json:"name,omitempty" yaml:"name,omitempty"`
@@ -530,6 +552,7 @@ type Driver struct {
 	Options map[string]string `json:"options,omitempty" yaml:"options,omitempty"`
 }
 
+// TmpfsOptions allow specifying Docker tmpfs config.
 type TmpfsOptions struct {
 	// SizeBytes - used for https://github.com/moby/moby/blob/v24.0.6/api/types/mount/mount.go#L113
 	SizeBytes int64 `json:"size_bytes,omitempty" yaml:"size_bytes,omitempty"`
@@ -538,6 +561,7 @@ type TmpfsOptions struct {
 	Mode os.FileMode `json:"mode,omitempty" yaml:"mode,omitempty"`
 }
 
+// PlatformConfig allow specifying Docker platform config.
 type PlatformConfig struct {
 	// Architecture - used for https://github.com/opencontainers/image-spec/blob/v1.1.0-rc4/specs-go/v1/descriptor.go#L56
 	Architecture string `json:"architecture,omitempty" yaml:"architecture,omitempty"`
@@ -555,6 +579,7 @@ type PlatformConfig struct {
 	Variant string `json:"variant,omitempty" yaml:"variant,omitempty"`
 }
 
+// StrSlice is a wrapper for strslice.StrSlice that works with yaml in addition to json.
 type StrSlice strslice.StrSlice
 
 func (s *StrSlice) UnmarshalYAML(value *yaml.Node) error {
@@ -574,6 +599,7 @@ func (s *StrSlice) UnmarshalYAML(value *yaml.Node) error {
 	return nil
 }
 
+// runConfig holds the configuration for running a Docker container.
 type runConfig struct {
 	hostname         string
 	containerConfig  *container.Config
@@ -583,6 +609,7 @@ type runConfig struct {
 	waiters          []waiterFunc
 }
 
+// initialize validates and initializes the runConfig based on the provided Config and network information.
 func (c Config) initialize(network *Network, imageCloneTag string) (*runConfig, error) {
 	if c.Name == "" {
 		return nil, ErrInvalidConfig{Property: "name", Msg: "cannot be empty"}
@@ -920,6 +947,7 @@ func mapSlice[T1, T2 any](slice []T1, mapper func(T1) T2) []T2 {
 	return result
 }
 
+// ErrInvalidConfig represents an error in case an invalid config is given.
 type ErrInvalidConfig struct {
 	Property string
 	Msg      string

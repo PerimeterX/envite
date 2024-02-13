@@ -1,3 +1,7 @@
+// Copyright 2024 HUMAN. All rights reserved.
+// Use of this source code is governed by a MIT style
+// license that can be found in the LICENSE file.
+
 package mongo
 
 import (
@@ -10,8 +14,10 @@ import (
 	"sync/atomic"
 )
 
+// ComponentType represents the type of the MongoDB seed component.
 const ComponentType = "mongo seed"
 
+// SeedComponent is a component for seeding MongoDB with data.
 type SeedComponent struct {
 	lock           sync.Mutex
 	clientProvider func() (*mongo.Client, error)
@@ -20,6 +26,7 @@ type SeedComponent struct {
 	writer         *envite.Writer
 }
 
+// NewSeedComponent creates a new SeedComponent instance.
 func NewSeedComponent(
 	clientProvider func() (*mongo.Client, error),
 	config SeedConfig,
