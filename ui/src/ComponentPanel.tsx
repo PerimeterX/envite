@@ -95,14 +95,16 @@ function ComponentPanel(props: ComponentPanelProps) {
                                 to={`/${props.component.id}/info`}
                                 component={NavLink}
                             />
-                            <Tab
-                                className="tab"
-                                iconPosition="start"
-                                label="Env Vars"
-                                value={`/${props.component.id}/env`}
-                                to={`/${props.component.id}/env`}
-                                component={NavLink}
-                            />
+                            {props.component.config.env && (
+                                <Tab
+                                    className="tab"
+                                    iconPosition="start"
+                                    label="Env Vars"
+                                    value={`/${props.component.id}/env`}
+                                    to={`/${props.component.id}/env`}
+                                    component={NavLink}
+                                />
+                            )}
                         </Tabs>
                     </div>
                 </div>
@@ -174,17 +176,19 @@ function ComponentPanel(props: ComponentPanelProps) {
                         <Route
                             path={`/info`}
                             element={
-                                <ComponentInfo info={props.component.info} />
+                                <ComponentInfo info={props.component.config} />
                             }
                         />
-                        <Route
-                            path={`/env`}
-                            element={
-                                <ComponentEnvVars
-                                    envVars={props.component.env_vars}
-                                />
-                            }
-                        />
+                        {props.component.config.env && (
+                            <Route
+                                path={`/env`}
+                                element={
+                                    <ComponentEnvVars
+                                        envVars={props.component.config.env}
+                                    />
+                                }
+                            />
+                        )}
                     </Routes>
                 </div>
             </div>

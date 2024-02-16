@@ -16,7 +16,7 @@ import (
 // Components within an environment can be started, stopped, and configured collectively or individually.
 type Environment struct {
 	id             string
-	components     [][]Component
+	components     []map[string]Component
 	componentsByID map[string]Component
 	outputManager  *outputManager
 	Logger         Logger
@@ -43,9 +43,8 @@ func NewEnvironment(id string, componentGraph *ComponentGraph, options ...Option
 		outputManager:  om,
 	}
 
-	for _, concurrentComponents := range componentGraph.components {
-		for _, component := range concurrentComponents {
-			componentID := component.ID()
+	for _, layer := range componentGraph.components {
+		for componentID, component := range layer {
 			if componentID == "" {
 				return nil, ErrInvalidComponentID{msg: "component id may not be empty"}
 			}
@@ -58,7 +57,7 @@ func NewEnvironment(id string, componentGraph *ComponentGraph, options ...Option
 				return nil, ErrInvalidComponentID{id: componentID, msg: "duplicate component id"}
 			}
 
-			err := component.AttachEnvironment(context.Background(), b, om.writer(component.ID()))
+			err := component.AttachEnvironment(context.Background(), b, om.writer(componentID))
 			if err != nil {
 				return nil, err
 			}
@@ -126,15 +125,16 @@ func (b *Environment) StartAll(ctx context.Context) error {
 func (b *Environment) StopAll(ctx context.Context) error {
 	b.Logger(LogLevelInfo, "stopping all")
 	for i := len(b.components) - 1; i >= 0; i-- {
-		concurrentComponents := b.components[i]
+		layer := b.components[i]
 		g, ctx := errgroup.WithContext(ctx)
-		for _, component := range concurrentComponents {
+		for id, component := range layer {
+			id := id
 			component := component
 			g.Go(func() error {
-				b.Logger(LogLevelInfo, fmt.Sprintf("stopping %s", component.ID()))
+				b.Logger(LogLevelInfo, fmt.Sprintf("stopping %s", id))
 				err := component.Stop(ctx)
 				if err != nil {
-					return fmt.Errorf("could not stop %s: %w", component.ID(), err)
+					return fmt.Errorf("could not stop %s: %w", id, err)
 				}
 
 				return nil
@@ -205,20 +205,25 @@ func (b *Environment) StopComponent(ctx context.Context, componentID string) err
 // Status returns the current status of all components within the environment.
 func (b *Environment) Status(ctx context.Context) (GetStatusResponse, error) {
 	result := GetStatusResponse{ID: b.id, Components: make([][]GetStatusResponseComponent, len(b.components))}
-	for i, concurrentComponents := range b.components {
-		components := make([]GetStatusResponseComponent, len(concurrentComponents))
-		for j, component := range concurrentComponents {
+	for i, layer := range b.components {
+		components := make([]GetStatusResponseComponent, 0, len(layer))
+		for id, component := range layer {
 			status, err := component.Status(ctx)
 			if err != nil {
-				return GetStatusResponse{}, fmt.Errorf("could not get status for %s: %w", component.ID(), err)
+				return GetStatusResponse{}, fmt.Errorf("could not get status for %s: %w", id, err)
 			}
-			components[j] = GetStatusResponseComponent{
-				ID:      component.ID(),
-				Type:    component.Type(),
-				Status:  status,
-				Info:    component.Config(),
-				EnvVars: component.EnvVars(),
+
+			info, err := buildComponentInfo(component)
+			if err != nil {
+				return GetStatusResponse{}, err
 			}
+
+			components = append(components, GetStatusResponseComponent{
+				ID:     id,
+				Type:   component.Type(),
+				Status: status,
+				Config: info,
+			})
 		}
 		result.Components[i] = components
 	}
@@ -235,14 +240,15 @@ func (b *Environment) Output() *Reader {
 func (b *Environment) Cleanup(ctx context.Context) error {
 	b.Logger(LogLevelInfo, "cleaning up")
 	g, ctx := errgroup.WithContext(ctx)
-	for _, concurrentComponents := range b.components {
-		for _, component := range concurrentComponents {
+	for _, layer := range b.components {
+		for id, component := range layer {
+			id := id
 			component := component
 			g.Go(func() error {
-				b.Logger(LogLevelInfo, fmt.Sprintf("cleaning up %s", component.ID()))
+				b.Logger(LogLevelInfo, fmt.Sprintf("cleaning up %s", id))
 				err := component.Cleanup(ctx)
 				if err != nil {
-					return fmt.Errorf("could not cleanup %s: %w", component.ID(), err)
+					return fmt.Errorf("could not cleanup %s: %w", id, err)
 				}
 
 				return nil
@@ -264,40 +270,41 @@ func (b *Environment) apply(ctx context.Context, enabledComponentIDs map[string]
 		return err
 	}
 
-	for _, concurrentComponents := range b.components {
+	for _, layer := range b.components {
 		g, ctx := errgroup.WithContext(ctx)
-		for _, component := range concurrentComponents {
+		for id, component := range layer {
+			id := id
 			component := component
-			_, ok := enabledComponentIDs[component.ID()]
+			_, ok := enabledComponentIDs[id]
 			if ok {
 				g.Go(func() error {
 					status, err := component.Status(ctx)
 					if err != nil {
-						return fmt.Errorf("could not get status for %s: %w", component.ID(), err)
+						return fmt.Errorf("could not get status for %s: %w", id, err)
 					}
 
 					if status == ComponentStatusRunning || status == ComponentStatusStarting {
 						return nil
 					}
 
-					b.Logger(LogLevelInfo, fmt.Sprintf("starting %s", component.ID()))
+					b.Logger(LogLevelInfo, fmt.Sprintf("starting %s", id))
 					err = component.Start(ctx)
 					if err != nil {
-						return fmt.Errorf("could not start %s: %w", component.ID(), err)
+						return fmt.Errorf("could not start %s: %w", id, err)
 					}
 
-					b.Logger(LogLevelInfo, fmt.Sprintf("finished starting %s", component.ID()))
+					b.Logger(LogLevelInfo, fmt.Sprintf("finished starting %s", id))
 					return nil
 				})
 			} else {
 				g.Go(func() error {
-					b.Logger(LogLevelInfo, fmt.Sprintf("stopping %s", component.ID()))
+					b.Logger(LogLevelInfo, fmt.Sprintf("stopping %s", id))
 					err := component.Stop(ctx)
 					if err != nil {
-						return fmt.Errorf("could not stop %s: %w", component.ID(), err)
+						return fmt.Errorf("could not stop %s: %w", id, err)
 					}
 
-					b.Logger(LogLevelInfo, fmt.Sprintf("finished stopping %s", component.ID()))
+					b.Logger(LogLevelInfo, fmt.Sprintf("finished stopping %s", id))
 					return nil
 				})
 			}
@@ -312,30 +319,31 @@ func (b *Environment) apply(ctx context.Context, enabledComponentIDs map[string]
 
 func (b *Environment) prepare(ctx context.Context, enabledComponentIDs map[string]struct{}) error {
 	g, ctx := errgroup.WithContext(ctx)
-	for _, concurrentComponents := range b.components {
-		for _, component := range concurrentComponents {
-			_, ok := enabledComponentIDs[component.ID()]
+	for _, layer := range b.components {
+		for id, component := range layer {
+			_, ok := enabledComponentIDs[id]
 			if !ok {
 				continue
 			}
+			id := id
 			component := component
 			g.Go(func() error {
 				status, err := component.Status(ctx)
 				if err != nil {
-					return fmt.Errorf("could not get status for %s: %w", component.ID(), err)
+					return fmt.Errorf("could not get status for %s: %w", id, err)
 				}
 
 				if status == ComponentStatusRunning || status == ComponentStatusStarting {
 					return nil
 				}
 
-				b.Logger(LogLevelInfo, fmt.Sprintf("preparing %s", component.ID()))
+				b.Logger(LogLevelInfo, fmt.Sprintf("preparing %s", id))
 				err = component.Prepare(ctx)
 				if err != nil {
-					return fmt.Errorf("could not prepare %s: %w", component.ID(), err)
+					return fmt.Errorf("could not prepare %s: %w", id, err)
 				}
 
-				b.Logger(LogLevelInfo, fmt.Sprintf("finished preparing %s", component.ID()))
+				b.Logger(LogLevelInfo, fmt.Sprintf("finished preparing %s", id))
 				return nil
 			})
 		}

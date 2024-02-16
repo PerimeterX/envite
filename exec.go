@@ -16,7 +16,7 @@ type ExecutionMode string
 
 const (
 	// ExecutionModeStart indicates the start execution mode, which starts all components in the environment,
-	// and then exists.
+	// and then exits.
 	ExecutionModeStart ExecutionMode = "start"
 
 	// ExecutionModeStop indicates the stop execution mode, which stops all components in the environment,
@@ -26,6 +26,14 @@ const (
 	// ExecutionModeDaemon indicates the daemon execution mode, which starts ENVITE as a daemon and serving a web UI.
 	ExecutionModeDaemon ExecutionMode = "daemon"
 )
+
+// DescribeAvailableModes returns a string describing all available execution modes.
+func DescribeAvailableModes() string {
+	return fmt.Sprintf("available modes:\n" +
+		"start - start all components in the environment and exit\n" +
+		"stop - stop all components in the environment and exit\n" +
+		"daemon - start ENVITE as a daemon and serve via a web UI\n")
+}
 
 // ParseExecutionMode parses the provided string value into an ExecutionMode.
 // It returns the parsed ExecutionMode or an error if the value is not a valid execution mode.

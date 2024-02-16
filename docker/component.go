@@ -75,10 +75,6 @@ func newComponent(
 	return c, nil
 }
 
-func (c *Component) ID() string {
-	return c.config.Name
-}
-
 func (c *Component) Type() string {
 	return ComponentType
 }
@@ -315,10 +311,6 @@ func (c *Component) Config() any {
 	return c.config
 }
 
-func (c *Component) EnvVars() map[string]string {
-	return c.config.Env
-}
-
 // Exec executes a command in the Docker container.
 func (c *Component) Exec(ctx context.Context, cmd []string) (int, error) {
 	cont, err := c.findContainer(ctx)
@@ -396,7 +388,7 @@ func (c *Component) writeLogs(id string) {
 		},
 	)
 	if err != nil {
-		c.Logger()(envite.LogLevelError, "could not read container logs for "+c.ID())
+		c.Logger()(envite.LogLevelError, "could not read container logs for "+c.containerName)
 	}
 }
 

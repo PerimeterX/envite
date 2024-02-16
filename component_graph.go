@@ -6,10 +6,13 @@ package envite
 
 // ComponentGraph represents a graph of components organized in layers.
 // Each layer can contain one or more components that can depend on components from the previous layers.
+// A layer is represented as a map, mapping from component ID to a component. Layer components are assumed
+// to not depend on each other and can be operated on concurrently.
+//
 // This structure is useful for initializing, starting, and stopping components in the correct order,
 // ensuring that dependencies are correctly managed.
 type ComponentGraph struct {
-	components [][]Component
+	components []map[string]Component
 }
 
 // NewComponentGraph creates a new instance of ComponentGraph.
@@ -19,8 +22,13 @@ type ComponentGraph struct {
 // Example:
 //
 //	 graph := NewComponentGraph().
-//	 	.AddLayer(componentA)
-//		.AddLayer(componentB, componentC)
+//	 	.AddLayer({
+//			"component-a": componentA,
+//	 	})
+//		.AddLayer({
+//			"component-b": componentB,
+//			"component-c": componentC,
+//	 	})
 //
 // This example creates a new component graph and adds two layers to it.
 func NewComponentGraph() *ComponentGraph {
@@ -34,18 +42,23 @@ func NewComponentGraph() *ComponentGraph {
 //
 // Parameters:
 //
-//	layerComponents ...Component: A variadic parameter that accepts one or more components to be added as a layer.
+//	components map[string]Component: A mapping from component ID to a component implementation.
 //
 // Example:
 //
 //	 graph := NewComponentGraph().
-//	 	.AddLayer(componentA)
-//		.AddLayer(componentB, componentC)
+//	 	.AddLayer({
+//			"component-a": componentA,
+//	 	})
+//		.AddLayer({
+//			"component-b": componentB,
+//			"component-c": componentC,
+//	 	})
 //
 // This example creates a new component graph and adds two layers to it.
-func (c *ComponentGraph) AddLayer(layerComponents ...Component) *ComponentGraph {
-	if len(layerComponents) > 0 {
-		c.components = append(c.components, layerComponents)
+func (c *ComponentGraph) AddLayer(components map[string]Component) *ComponentGraph {
+	if len(components) > 0 {
+		c.components = append(c.components, components)
 	}
 	return c
 }

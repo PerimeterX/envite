@@ -54,12 +54,38 @@ type GetStatusResponse struct {
 	Components [][]GetStatusResponseComponent `json:"components"`
 }
 
+// GetStatusResponseComponent represents a single component's status within the environment.
+// It provides detailed information about the component, including its ID, type, current status,
+// additional information specific to the component type, and environment variables associated with it.
+//
+// Fields:
+// - ID: A unique identifier for the component.
+// - Type: The type of the component, indicating its role or function within the environment.
+// - Status: The current status of the component, such as running, stopped, etc.
+// - Config: The component config.
 type GetStatusResponseComponent struct {
-	ID      string            `json:"id"`
-	Type    string            `json:"type"`
-	Status  ComponentStatus   `json:"status"`
-	Info    any               `json:"info"`
-	EnvVars map[string]string `json:"env_vars"`
+	ID     string          `json:"id"`
+	Type   string          `json:"type"`
+	Status ComponentStatus `json:"status"`
+	Config map[string]any  `json:"config"`
+}
+
+// buildComponentInfo takes a Component and extracts its configuration object,
+// injecting a field representing the component type.
+func buildComponentInfo(c Component) (map[string]any, error) {
+	data, err := json.Marshal(c.Config())
+	if err != nil {
+		return nil, err
+	}
+
+	var result map[string]any
+	err = json.Unmarshal(data, &result)
+	if err != nil {
+		return nil, err
+	}
+
+	result["type"] = c.Type()
+	return result, nil
 }
 
 func (g getStatusHandler) ServeHTTP(writer http.ResponseWriter, request *http.Request) {

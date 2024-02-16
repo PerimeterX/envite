@@ -15,8 +15,7 @@ export interface Component {
     id: string;
     type: string;
     status: 'stopped' | 'failed' | 'starting' | 'running' | 'finished';
-    info: any;
-    env_vars: { [key: string]: string };
+    config: any;
 }
 
 export interface Message {

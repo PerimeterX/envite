@@ -11,9 +11,6 @@ import (
 // Component defines the interface for an environment component.
 // It includes methods for lifecycle management, configuration, and status reporting.
 type Component interface {
-	// ID returns the unique identifier for the component.
-	ID() string
-
 	// Type returns the type of the component.
 	Type() string
 
@@ -39,13 +36,9 @@ type Component interface {
 	// Status reports the current operational status of the component.
 	Status(ctx context.Context) (ComponentStatus, error)
 
-	// Config returns the current configuration of the component.
-	// The exact return type can vary between different implementations.
+	// Config returns the configuration of the component.
+	// The exact return type can vary between component types.
 	Config() any
-
-	// EnvVars returns a map of environment variables that the component requires or sets.
-	// The map's keys are variable names, and its values are the corresponding values.
-	EnvVars() map[string]string
 }
 
 // ComponentStatus represents the operational status of a component within the environment.

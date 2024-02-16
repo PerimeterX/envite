@@ -26,6 +26,23 @@ const (
 	LogLevelFatal
 )
 
+// String converts a LogLevel value to a string.
+func (l LogLevel) String() string {
+	switch l {
+	case LogLevelTrace:
+		return "TRACE"
+	case LogLevelDebug:
+		return "DEBUG"
+	case LogLevelInfo:
+		return "INFO"
+	case LogLevelError:
+		return "ERROR"
+	case LogLevelFatal:
+		return "FATAL"
+	}
+	return "INFO"
+}
+
 // WithLogger is an Option function that sets the logger for the Environment.
 func WithLogger(logger Logger) Option {
 	return func(b *Environment) {
