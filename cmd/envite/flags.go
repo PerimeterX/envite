@@ -28,9 +28,9 @@ type flagValues struct {
 func parseFlags() flagValues {
 	f := flagValues{}
 
-	flag.Var(&f.file, "file", "Path to an environment yaml file")
-	flag.Var(&f.port, "port", "Web UI port to be used if mode is daemon")
-	flag.Var(&f.envID, "id", "Override the default environment ID")
+	flag.Var(&f.file, "file", "Path to an environment yaml file (default: `envite.yml`)")
+	flag.Var(&f.port, "port", "Web UI port to be used if mode is daemon (default: `4005`)")
+	flag.Var(&f.envID, "id", "Override the environment ID provided by the environment yaml")
 	flag.Var(&f.dockerNetworkID, "network", "Docker network identifier to be used. "+
 		"Used only if docker components exist in the environment file. If not provided, ENVITE will create "+
 		"a dedicated open docker network.")
