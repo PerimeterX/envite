@@ -9,6 +9,7 @@ import (
 	"errors"
 	"fmt"
 	"golang.org/x/sync/errgroup"
+	"sort"
 	"strings"
 )
 
@@ -225,6 +226,15 @@ func (b *Environment) Status(ctx context.Context) (GetStatusResponse, error) {
 				Config: info,
 			})
 		}
+
+		// since components of each layer are stored in a map,
+		// their order is shuffled each time we produce status.
+		// to allow the ordering of components to be consistent,
+		// we sort them lexicographically by their ID:
+		sort.Slice(components, func(i, j int) bool {
+			return components[i].ID < components[j].ID
+		})
+
 		result.Components[i] = components
 	}
 	return result, nil
