@@ -31,10 +31,6 @@ func exec() error {
 		return err
 	}
 
-	server, err := buildServer(env, flags)
-	if err != nil {
-		return err
-	}
-
+	server := buildServer(env, flags)
 	return envite.Execute(server, flags.mode)
 }
