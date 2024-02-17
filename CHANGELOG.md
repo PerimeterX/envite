@@ -14,3 +14,16 @@ Initial release.
 ### Fixed
 
 - fix error handling on stop container.
+
+## [[0.0.3](https://github.com/PerimeterX/envite/compare/v0.0.2...v0.0.3)] - 2024-02-17
+
+Prepare for open source.
+
+### Added
+
+- CLI support.
+- Go releaser support.
+- Unit tests.
+- Go docs.
+- Improved README.md.
+- Added several small changes to the SDK API to allow smoother experience in the CLI.
