@@ -1,3 +1,7 @@
+// Copyright 2024 HUMAN. All rights reserved.
+// Use of this source code is governed by a MIT style
+// license that can be found in the LICENSE file.
+
 package envite
 
 import (
@@ -6,14 +10,33 @@ import (
 	"fmt"
 )
 
+// ExecutionMode represents different execution modes for ENVITE.
+// It can be used to specify the behavior when executing ENVITE commands.
 type ExecutionMode string
 
 const (
-	ExecutionModeStart  ExecutionMode = "start"
-	ExecutionModeStop   ExecutionMode = "stop"
+	// ExecutionModeStart indicates the start execution mode, which starts all components in the environment,
+	// and then exits.
+	ExecutionModeStart ExecutionMode = "start"
+
+	// ExecutionModeStop indicates the stop execution mode, which stops all components in the environment,
+	// performs cleanup, and then exits.
+	ExecutionModeStop ExecutionMode = "stop"
+
+	// ExecutionModeDaemon indicates the daemon execution mode, which starts ENVITE as a daemon and serving a web UI.
 	ExecutionModeDaemon ExecutionMode = "daemon"
 )
 
+// DescribeAvailableModes returns a string describing all available execution modes.
+func DescribeAvailableModes() string {
+	return fmt.Sprintf("available modes:\n" +
+		"start - start all components in the environment and exit\n" +
+		"stop - stop all components in the environment and exit\n" +
+		"daemon - start ENVITE as a daemon and serve via a web UI\n")
+}
+
+// ParseExecutionMode parses the provided string value into an ExecutionMode.
+// It returns the parsed ExecutionMode or an error if the value is not a valid execution mode.
 func ParseExecutionMode(value string) (ExecutionMode, error) {
 	switch value {
 	case "start":
@@ -26,6 +49,9 @@ func ParseExecutionMode(value string) (ExecutionMode, error) {
 	return "", ErrInvalidExecutionMode{v: value}
 }
 
+// Execute performs the specified action based on the provided execution mode.
+// It takes a Server instance and an ExecutionMode as parameters and executes the corresponding action.
+// The available execution modes are ExecutionModeStart, ExecutionModeStop, and ExecutionModeDaemon.
 func Execute(server *Server, executionMode ExecutionMode) error {
 	switch executionMode {
 	case ExecutionModeStart:
@@ -47,6 +73,8 @@ func Execute(server *Server, executionMode ExecutionMode) error {
 //go:embed ascii.txt
 var asciiArt string
 
+// ErrInvalidExecutionMode is an error type representing an invalid execution mode.
+// It is returned when attempting to parse an unrecognized execution mode.
 type ErrInvalidExecutionMode struct {
 	v string
 }

@@ -1,3 +1,7 @@
+// Copyright 2024 HUMAN. All rights reserved.
+// Use of this source code is governed by a MIT style
+// license that can be found in the LICENSE file.
+
 package mongo
 
 import (
@@ -5,37 +9,28 @@ import (
 	"fmt"
 	"github.com/perimeterx/envite"
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 	"strconv"
 	"sync"
 	"sync/atomic"
 )
 
+// ComponentType represents the type of the MongoDB seed component.
 const ComponentType = "mongo seed"
 
+// SeedComponent is a component for seeding MongoDB with data.
 type SeedComponent struct {
-	lock           sync.Mutex
-	clientProvider func() (*mongo.Client, error)
-	config         SeedConfig
-	status         atomic.Value
-	writer         *envite.Writer
+	lock   sync.Mutex
+	config SeedConfig
+	status atomic.Value
+	writer *envite.Writer
 }
 
-func NewSeedComponent(
-	clientProvider func() (*mongo.Client, error),
-	config SeedConfig,
-) *SeedComponent {
-	m := &SeedComponent{
-		clientProvider: clientProvider,
-		config:         config,
-	}
-
+// NewSeedComponent creates a new SeedComponent instance.
+func NewSeedComponent(config SeedConfig) *SeedComponent {
+	m := &SeedComponent{config: config}
 	m.status.Store(envite.ComponentStatusStopped)
-
 	return m
-}
-
-func (m *SeedComponent) ID() string {
-	return m.config.ID
 }
 
 func (m *SeedComponent) Type() string {
@@ -69,7 +64,7 @@ func (m *SeedComponent) Start(ctx context.Context) error {
 }
 
 func (m *SeedComponent) seed(ctx context.Context) error {
-	m.writer.WriteString(fmt.Sprintf("starting mongo seed %s", m.config.ID))
+	m.writer.WriteString("starting mongo seed")
 	client, err := m.clientProvider()
 	if err != nil {
 		return err
@@ -102,6 +97,14 @@ func (m *SeedComponent) seed(ctx context.Context) error {
 	return nil
 }
 
+func (m *SeedComponent) clientProvider() (*mongo.Client, error) {
+	if m.config.ClientProvider != nil {
+		return m.config.ClientProvider()
+	}
+
+	return mongo.Connect(context.Background(), options.Client().ApplyURI(m.config.URI))
+}
+
 func (m *SeedComponent) Stop(context.Context) error {
 	m.status.Store(envite.ComponentStatusStopped)
 	return nil
@@ -117,8 +120,4 @@ func (m *SeedComponent) Status(context.Context) (envite.ComponentStatus, error) 
 
 func (m *SeedComponent) Config() any {
 	return m.config
-}
-
-func (m *SeedComponent) EnvVars() map[string]string {
-	return nil
 }

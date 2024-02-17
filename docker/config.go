@@ -1,3 +1,7 @@
+// Copyright 2024 HUMAN. All rights reserved.
+// Use of this source code is governed by a MIT style
+// license that can be found in the LICENSE file.
+
 package docker
 
 import (
@@ -15,223 +19,245 @@ import (
 	"time"
 )
 
-// Config - Docker Component configuration
+// Config represents Docker Component configuration
 type Config struct {
 	// Name - the name of the container. Name cannot be empty.
-	// this will also be used as the component ID of the environment.
-	Name string `json:"name" yaml:"name"`
+	Name string `json:"name"`
 
 	// Env - environment variables for the container
-	Env map[string]string `json:"env,omitempty" yaml:"env,omitempty"`
+	Env map[string]string `json:"env"`
 
 	// Ports - list of ports to expose
 	// we don't map internal ports to a different external ports since it won't be consistent
 	// for open network situations used in local development powered by docker network mode "host"
-	Ports []Port `json:"ports,omitempty" yaml:"ports,omitempty"`
+	Ports []Port `json:"ports,omitempty"`
 
 	// Waiters - list of waiters. A waiter is a function responsible for waiting for healthy status
 	// of the container before finishing the container start process
-	Waiters []Waiter `json:"waiters,omitempty" yaml:"waiters,omitempty"`
+	Waiters []Waiter `json:"waiters,omitempty"`
 
 	// ImagePullOptions - options for pulling the container image
-	ImagePullOptions *ImagePullOptions `json:"image_pull_options,omitempty" yaml:"image_pull_options,omitempty"`
+	ImagePullOptions *ImagePullOptions `json:"image_pull_options,omitempty"`
 
 	// Hostname - used for https://github.com/moby/moby/blob/v24.0.6/api/types/container/config.go#L71
-	Hostname string `json:"hostname,omitempty" yaml:"hostname,omitempty"`
+	Hostname string `json:"hostname,omitempty"`
 
 	// Domainname - used for https://github.com/moby/moby/blob/v24.0.6/api/types/container/config.go#L72
-	Domainname string `json:"domainname,omitempty" yaml:"domainname,omitempty"`
+	Domainname string `json:"domainname,omitempty"`
 
 	// User - used for https://github.com/moby/moby/blob/v24.0.6/api/types/container/config.go#L73
-	User string `json:"user,omitempty" yaml:"user,omitempty"`
+	User string `json:"user,omitempty"`
 
 	// AttachStdin - used for https://github.com/moby/moby/blob/v24.0.6/api/types/container/config.go#L74
-	AttachStdin bool `json:"attach_stdin,omitempty" yaml:"attach_stdin,omitempty"`
+	AttachStdin bool `json:"attach_stdin,omitempty"`
 
 	// AttachStdout - used for https://github.com/moby/moby/blob/v24.0.6/api/types/container/config.go#L75
-	AttachStdout bool `json:"attach_stdout,omitempty" yaml:"attach_stdout,omitempty"`
+	AttachStdout bool `json:"attach_stdout,omitempty"`
 
 	// AttachStderr - used for https://github.com/moby/moby/blob/v24.0.6/api/types/container/config.go#L76
-	AttachStderr bool `json:"attach_stderr,omitempty" yaml:"attach_stderr,omitempty"`
+	AttachStderr bool `json:"attach_stderr,omitempty"`
 
 	// Tty - used for https://github.com/moby/moby/blob/v24.0.6/api/types/container/config.go#L78
-	Tty bool `json:"tty,omitempty" yaml:"tty,omitempty"`
+	Tty bool `json:"tty,omitempty"`
 
 	// OpenStdin - used for https://github.com/moby/moby/blob/v24.0.6/api/types/container/config.go#L79
-	OpenStdin bool `json:"open_stdin,omitempty" yaml:"open_stdin,omitempty"`
+	OpenStdin bool `json:"open_stdin,omitempty"`
 
 	// StdinOnce - used for https://github.com/moby/moby/blob/v24.0.6/api/types/container/config.go#L80
-	StdinOnce bool `json:"stdin_once,omitempty" yaml:"stdin_once,omitempty"`
+	StdinOnce bool `json:"stdin_once,omitempty"`
 
 	// Cmd - used for https://github.com/moby/moby/blob/v24.0.6/api/types/container/config.go#L82
-	Cmd StrSlice `json:"cmd,omitempty" yaml:"cmd,omitempty"`
+	Cmd StrSlice `json:"cmd,omitempty"`
 
 	// Healthcheck - used for https://github.com/moby/moby/blob/v24.0.6/api/types/container/config.go#L83
-	Healthcheck *Healthcheck `json:"healthcheck,omitempty" yaml:"healthcheck,omitempty"`
+	Healthcheck *Healthcheck `json:"healthcheck,omitempty"`
 
 	// ArgsEscaped - used for https://github.com/moby/moby/blob/v24.0.6/api/types/container/config.go#L84
-	ArgsEscaped bool `json:"args_escaped,omitempty" yaml:"args_escaped,omitempty"`
+	ArgsEscaped bool `json:"args_escaped,omitempty"`
 
 	// Image - used for https://github.com/moby/moby/blob/v24.0.6/api/types/container/config.go#L85
 	// Image cannot be empty
-	Image string `json:"image,omitempty" yaml:"image,omitempty"`
+	Image string `json:"image,omitempty"`
 
 	// Volumes - used for https://github.com/moby/moby/blob/v24.0.6/api/types/container/config.go#L86
-	Volumes map[string]struct{} `json:"volumes,omitempty" yaml:"volumes,omitempty"`
+	Volumes map[string]struct{} `json:"volumes,omitempty"`
 
 	// WorkingDir - used for https://github.com/moby/moby/blob/v24.0.6/api/types/container/config.go#L87
-	WorkingDir string `json:"working_dir,omitempty" yaml:"working_dir,omitempty"`
+	WorkingDir string `json:"working_dir,omitempty"`
 
 	// Entrypoint - used for https://github.com/moby/moby/blob/v24.0.6/api/types/container/config.go#L88
-	Entrypoint StrSlice `json:"entrypoint,omitempty" yaml:"entrypoint,omitempty"`
+	Entrypoint StrSlice `json:"entrypoint,omitempty"`
 
 	// NetworkDisabled - used for https://github.com/moby/moby/blob/v24.0.6/api/types/container/config.go#L89
-	NetworkDisabled bool `json:"network_disabled,omitempty" yaml:"network_disabled,omitempty"`
+	NetworkDisabled bool `json:"network_disabled,omitempty"`
 
 	// MacAddress - used for https://github.com/moby/moby/blob/v24.0.6/api/types/container/config.go#L90
-	MacAddress string `json:"mac_address,omitempty" yaml:"mac_address,omitempty"`
+	MacAddress string `json:"mac_address,omitempty"`
 
 	// OnBuild - used for https://github.com/moby/moby/blob/v24.0.6/api/types/container/config.go#L91
-	OnBuild []string `json:"on_build,omitempty" yaml:"on_build,omitempty"`
+	OnBuild []string `json:"on_build,omitempty"`
 
 	// Labels - used for https://github.com/moby/moby/blob/v24.0.6/api/types/container/config.go#L92
-	Labels map[string]string `json:"labels,omitempty" yaml:"labels,omitempty"`
+	Labels map[string]string `json:"labels,omitempty"`
 
 	// StopSignal - used for https://github.com/moby/moby/blob/v24.0.6/api/types/container/config.go#L93
-	StopSignal string `json:"stop_signal,omitempty" yaml:"stop_signal,omitempty"`
+	StopSignal string `json:"stop_signal,omitempty"`
 
 	// StopTimeout - used for https://github.com/moby/moby/blob/v24.0.6/api/types/container/config.go#L94
-	StopTimeout *int `json:"stop_timeout,omitempty" yaml:"stop_timeout,omitempty"`
+	StopTimeout *int `json:"stop_timeout,omitempty"`
 
 	// Shell - used for https://github.com/moby/moby/blob/v24.0.6/api/types/container/config.go#L95
-	Shell StrSlice `json:"shell,omitempty" yaml:"shell,omitempty"`
+	Shell StrSlice `json:"shell,omitempty"`
 
 	// Binds - used for https://github.com/moby/moby/blob/v24.0.6/api/types/container/hostconfig.go#L381
-	Binds []string `json:"binds,omitempty" yaml:"binds,omitempty"`
+	Binds []string `json:"binds,omitempty"`
 
 	// ContainerIDFile - used for https://github.com/moby/moby/blob/v24.0.6/api/types/container/hostconfig.go#L382
-	ContainerIDFile string `json:"container_id_file,omitempty" yaml:"container_id_file,omitempty"`
+	ContainerIDFile string `json:"container_id_file,omitempty"`
 
 	// LogConfig - used for https://github.com/moby/moby/blob/v24.0.6/api/types/container/hostconfig.go#L383
-	LogConfig *LogConfig `json:"log_config,omitempty" yaml:"log_config,omitempty"`
+	LogConfig *LogConfig `json:"log_config,omitempty"`
 
 	// RestartPolicy - used for https://github.com/moby/moby/blob/v24.0.6/api/types/container/hostconfig.go#L386
-	RestartPolicy *RestartPolicy `json:"restart_policy,omitempty" yaml:"restart_policy,omitempty"`
+	RestartPolicy *RestartPolicy `json:"restart_policy,omitempty"`
 
 	// VolumeDriver - used for https://github.com/moby/moby/blob/v24.0.6/api/types/container/hostconfig.go#L388
-	VolumeDriver string `json:"volume_driver,omitempty" yaml:"volume_driver,omitempty"`
+	VolumeDriver string `json:"volume_driver,omitempty"`
 
 	// VolumesFrom - used for https://github.com/moby/moby/blob/v24.0.6/api/types/container/hostconfig.go#L389
-	VolumesFrom []string `json:"volumes_from,omitempty" yaml:"volumes_from,omitempty"`
+	VolumesFrom []string `json:"volumes_from,omitempty"`
 
 	// ConsoleSize - used for https://github.com/moby/moby/blob/v24.0.6/api/types/container/hostconfig.go#L390
-	ConsoleSize []uint `json:"console_size,omitempty" yaml:"console_size,omitempty"`
+	ConsoleSize []uint `json:"console_size,omitempty"`
 
 	// Annotations - used for https://github.com/moby/moby/blob/v24.0.6/api/types/container/hostconfig.go#L391
-	Annotations map[string]string `json:"annotations,omitempty" yaml:"annotations,omitempty"`
+	Annotations map[string]string `json:"annotations,omitempty"`
 
 	// CapAdd - used for https://github.com/moby/moby/blob/v24.0.6/api/types/container/hostconfig.go#L394
-	CapAdd StrSlice `json:"cap_add,omitempty" yaml:"cap_add,omitempty"`
+	CapAdd StrSlice `json:"cap_add,omitempty"`
 
 	// CapDrop - used for https://github.com/moby/moby/blob/v24.0.6/api/types/container/hostconfig.go#L395
-	CapDrop StrSlice `json:"cap_drop,omitempty" yaml:"cap_drop,omitempty"`
+	CapDrop StrSlice `json:"cap_drop,omitempty"`
 
 	// CgroupnsMode - used for https://github.com/moby/moby/blob/v24.0.6/api/types/container/hostconfig.go#L396
-	CgroupnsMode container.CgroupnsMode `json:"cgroupns_mode,omitempty" yaml:"cgroupns_mode,omitempty"`
+	CgroupnsMode container.CgroupnsMode `json:"cgroupns_mode,omitempty"`
 
 	// DNS - used for https://github.com/moby/moby/blob/v24.0.6/api/types/container/hostconfig.go#L397
-	DNS []string `json:"dns,omitempty" yaml:"dns,omitempty"`
+	DNS []string `json:"dns,omitempty"`
 
 	// DNSOptions - used for https://github.com/moby/moby/blob/v24.0.6/api/types/container/hostconfig.go#L398
-	DNSOptions []string `json:"dns_options,omitempty" yaml:"dns_options,omitempty"`
+	DNSOptions []string `json:"dns_options,omitempty"`
 
 	// DNSSearch - used for https://github.com/moby/moby/blob/v24.0.6/api/types/container/hostconfig.go#L399
-	DNSSearch []string `json:"dns_search,omitempty" yaml:"dns_search,omitempty"`
+	DNSSearch []string `json:"dns_search,omitempty"`
 
 	// ExtraHosts - used for https://github.com/moby/moby/blob/v24.0.6/api/types/container/hostconfig.go#L400
-	ExtraHosts []string `json:"extra_hosts,omitempty" yaml:"extra_hosts,omitempty"`
+	ExtraHosts []string `json:"extra_hosts,omitempty"`
 
 	// GroupAdd - used for https://github.com/moby/moby/blob/v24.0.6/api/types/container/hostconfig.go#L401
-	GroupAdd []string `json:"group_add,omitempty" yaml:"group_add,omitempty"`
+	GroupAdd []string `json:"group_add,omitempty"`
 
 	// IpcMode - used for https://github.com/moby/moby/blob/v24.0.6/api/types/container/hostconfig.go#L402
-	IpcMode container.IpcMode `json:"ipc_mode,omitempty" yaml:"ipc_mode,omitempty"`
+	IpcMode container.IpcMode `json:"ipc_mode,omitempty"`
 
 	// Cgroup - used for https://github.com/moby/moby/blob/v24.0.6/api/types/container/hostconfig.go#L403
-	Cgroup container.CgroupSpec `json:"cgroup,omitempty" yaml:"cgroup,omitempty"`
+	Cgroup container.CgroupSpec `json:"cgroup,omitempty"`
 
 	// Links - used for https://github.com/moby/moby/blob/v24.0.6/api/types/container/hostconfig.go#L404
-	Links []string `json:"links,omitempty" yaml:"links,omitempty"`
+	Links []string `json:"links,omitempty"`
 
 	// OomScoreAdj - used for https://github.com/moby/moby/blob/v24.0.6/api/types/container/hostconfig.go#L405
-	OomScoreAdj int `json:"oom_score_adj,omitempty" yaml:"oom_score_adj,omitempty"`
+	OomScoreAdj int `json:"oom_score_adj,omitempty"`
 
 	// PidMode - used for https://github.com/moby/moby/blob/v24.0.6/api/types/container/hostconfig.go#L406
-	PidMode container.PidMode `json:"pid_mode,omitempty" yaml:"pid_mode,omitempty"`
+	PidMode container.PidMode `json:"pid_mode,omitempty"`
 
 	// Privileged - used for https://github.com/moby/moby/blob/v24.0.6/api/types/container/hostconfig.go#L407
-	Privileged bool `json:"privileged,omitempty" yaml:"privileged,omitempty"`
+	Privileged bool `json:"privileged,omitempty"`
 
 	// PublishAllPorts - used for https://github.com/moby/moby/blob/v24.0.6/api/types/container/hostconfig.go#L408
-	PublishAllPorts bool `json:"publish_all_ports,omitempty" yaml:"publish_all_ports,omitempty"`
+	PublishAllPorts bool `json:"publish_all_ports,omitempty"`
 
 	// ReadonlyRootfs - used for https://github.com/moby/moby/blob/v24.0.6/api/types/container/hostconfig.go#L409
-	ReadonlyRootfs bool `json:"readonly_rootfs,omitempty" yaml:"readonly_rootfs,omitempty"`
+	ReadonlyRootfs bool `json:"readonly_rootfs,omitempty"`
 
 	// SecurityOpt - used for https://github.com/moby/moby/blob/v24.0.6/api/types/container/hostconfig.go#L410
-	SecurityOpt []string `json:"security_opt,omitempty" yaml:"security_opt,omitempty"`
+	SecurityOpt []string `json:"security_opt,omitempty"`
 
 	// StorageOpt - used for https://github.com/moby/moby/blob/v24.0.6/api/types/container/hostconfig.go#L411
-	StorageOpt map[string]string `json:"storage_opt,omitempty" yaml:"storage_opt,omitempty"`
+	StorageOpt map[string]string `json:"storage_opt,omitempty"`
 
 	// Tmpfs - used for https://github.com/moby/moby/blob/v24.0.6/api/types/container/hostconfig.go#L412
-	Tmpfs map[string]string `json:"tmpfs,omitempty" yaml:"tmpfs,omitempty"`
+	Tmpfs map[string]string `json:"tmpfs,omitempty"`
 
 	// UTSMode - used for https://github.com/moby/moby/blob/v24.0.6/api/types/container/hostconfig.go#L413
-	UTSMode container.UTSMode `json:"uts_mode,omitempty" yaml:"uts_mode,omitempty"`
+	UTSMode container.UTSMode `json:"uts_mode,omitempty"`
 
 	// UsernsMode - used for https://github.com/moby/moby/blob/v24.0.6/api/types/container/hostconfig.go#L414
-	UsernsMode container.UsernsMode `json:"userns_mode,omitempty" yaml:"userns_mode,omitempty"`
+	UsernsMode container.UsernsMode `json:"userns_mode,omitempty"`
 
 	// ShmSize - used for https://github.com/moby/moby/blob/v24.0.6/api/types/container/hostconfig.go#L415
-	ShmSize int64 `json:"shm_size,omitempty" yaml:"shm_size,omitempty"`
+	ShmSize int64 `json:"shm_size,omitempty"`
 
 	// Sysctls - used for https://github.com/moby/moby/blob/v24.0.6/api/types/container/hostconfig.go#L416
-	Sysctls map[string]string `json:"sysctls,omitempty" yaml:"sysctls,omitempty"`
+	Sysctls map[string]string `json:"sysctls,omitempty"`
 
 	// Runtime - used for https://github.com/moby/moby/blob/v24.0.6/api/types/container/hostconfig.go#L417
-	Runtime string `json:"runtime,omitempty" yaml:"runtime,omitempty"`
+	Runtime string `json:"runtime,omitempty"`
 
 	// Isolation - used for https://github.com/moby/moby/blob/v24.0.6/api/types/container/hostconfig.go#L420
-	Isolation container.Isolation `json:"isolation,omitempty" yaml:"isolation,omitempty"`
+	Isolation container.Isolation `json:"isolation,omitempty"`
 
 	// Resources - used for https://github.com/moby/moby/blob/v24.0.6/api/types/container/hostconfig.go#L423
-	Resources *Resources `json:"resources,omitempty" yaml:"resources,omitempty"`
+	Resources *Resources `json:"resources,omitempty"`
 
 	// Mounts - used for https://github.com/moby/moby/blob/v24.0.6/api/types/container/hostconfig.go#L426
-	Mounts []Mount `json:"mounts,omitempty" yaml:"mounts,omitempty"`
+	Mounts []Mount `json:"mounts,omitempty"`
 
 	// MaskedPaths - used for https://github.com/moby/moby/blob/v24.0.6/api/types/container/hostconfig.go#L429
-	MaskedPaths []string `json:"masked_paths,omitempty" yaml:"masked_paths,omitempty"`
+	MaskedPaths []string `json:"masked_paths,omitempty"`
 
 	// ReadonlyPaths - used for https://github.com/moby/moby/blob/v24.0.6/api/types/container/hostconfig.go#L432
-	ReadonlyPaths []string `json:"readonly_paths,omitempty" yaml:"readonly_paths,omitempty"`
+	ReadonlyPaths []string `json:"readonly_paths,omitempty"`
 
 	// Init - used for https://github.com/moby/moby/blob/v24.0.6/api/types/container/hostconfig.go#L435
-	Init *bool `json:"init,omitempty" yaml:"init,omitempty"`
+	Init *bool `json:"init,omitempty"`
 
 	// PlatformConfig describes the platform which the image in the manifest runs on
-	PlatformConfig *PlatformConfig `json:"platform_config,omitempty" yaml:"platform_config,omitempty"`
+	PlatformConfig *PlatformConfig `json:"platform_config,omitempty"`
 }
 
+// Port represents a single port to expose
 type Port struct {
 	// Port to expose
-	Port string `json:"port,omitempty" yaml:"port,omitempty"`
+	Port string `json:"port,omitempty"`
 
 	// Protocol to use - "tcp"/"udp". can be left empty, the default value in this case will be "tcp"
-	Protocol string `json:"protocol,omitempty" yaml:"protocol,omitempty"`
+	Protocol string `json:"protocol,omitempty"`
 }
 
+// Waiter represents a Docker component waiter config.
+// A Waiter waits for a docker component to meet a certain condition before finishing its startup.
+type Waiter struct {
+	// Type - WaiterType type to use
+	Type WaiterType `json:"type,omitempty"`
+
+	// String - only for Type == "string"
+	// the string value to wait for
+	String string `json:"string,omitempty"`
+
+	// Regex - only for Type == "regex"
+	// the regex value to wait for
+	// compiled to a go regexp.Regexp using re2 syntax
+	Regex string `json:"regex,omitempty"`
+
+	// Duration - only for Type == "duration"
+	// the duration to wait
+	// parsed as a go duration using time.ParseDuration
+	Duration string `json:"duration,omitempty"`
+}
+
+// WaiterType represents a type of Docker component waiter.
 type WaiterType string
 
 const (
@@ -245,75 +271,60 @@ const (
 	WaiterTypeDuration WaiterType = "duration"
 )
 
-type Waiter struct {
-	// Type - WaiterType type to use
-	Type WaiterType `json:"type,omitempty" yaml:"type,omitempty"`
-
-	// String - only for Type == "string"
-	// the string value to wait for
-	String string `json:"string,omitempty" yaml:"string,omitempty"`
-
-	// Regex - only for Type == "regex"
-	// the regex value to wait for
-	// compiled to a go regexp.Regexp using re2 syntax
-	Regex string `json:"regex,omitempty" yaml:"regex,omitempty"`
-
-	// Duration - only for Type == "duration"
-	// the duration to wait
-	// parsed as a go duration using time.ParseDuration
-	Duration string `json:"duration,omitempty" yaml:"duration,omitempty"`
-}
-
+// ImagePullOptions allow specifying Docker image pull related configs.
 type ImagePullOptions struct {
 	// Disabled allow disabling image pull/remove
 	// this is useful when the image already exists on the machine and we want it to remain after cleanup
-	Disabled bool `json:"disabled,omitempty" yaml:"disabled,omitempty"`
+	Disabled bool `json:"disabled,omitempty"`
 
 	// All - used for https://github.com/moby/moby/blob/v24.0.6/api/types/client.go#L279
-	All bool `json:"all,omitempty" yaml:"all,omitempty"`
+	All bool `json:"all,omitempty"`
 
 	// RegistryAuth - used for https://github.com/moby/moby/blob/v24.0.6/api/types/client.go#L280
 	// only available when RegistryAuthFunc is not set
-	RegistryAuth string `json:"registry_auth,omitempty" yaml:"registry_auth,omitempty"`
+	RegistryAuth string `json:"registry_auth,omitempty"`
 
 	// PrivilegeFunc - used for https://github.com/moby/moby/blob/v24.0.6/api/types/client.go#L281
 	// available only via code, not available in config files
-	PrivilegeFunc types.RequestPrivilegeFunc `json:"-" yaml:"-"`
+	PrivilegeFunc types.RequestPrivilegeFunc `json:"-"`
 
 	// Platform - used for https://github.com/moby/moby/blob/v24.0.6/api/types/client.go#L282
-	Platform string `json:"platform,omitempty" yaml:"platform,omitempty"`
+	Platform string `json:"platform,omitempty"`
 
 	// a lazy load function for the RegistryAuth
 	// available only via code, not available in config files
 	// used when loading the auth file take a long time, and you want to avoid loading it when it's not needed
-	RegistryAuthFunc func() (string, error) `json:"-" yaml:"-"`
+	RegistryAuthFunc func() (string, error) `json:"-"`
 }
 
+// Healthcheck allow specifying Docker healthcheck config.
 type Healthcheck struct {
 	// Test - used for https://github.com/moby/moby/blob/v24.0.6/api/types/container/config.go#L44
-	Test []string `json:"test,omitempty" yaml:"test,omitempty"`
+	Test []string `json:"test,omitempty"`
 
 	// Interval - used for https://github.com/moby/moby/blob/v24.0.6/api/types/container/config.go#L47
-	Interval time.Duration `json:"interval,omitempty" yaml:"interval,omitempty"`
+	Interval time.Duration `json:"interval,omitempty"`
 
 	// Timeout - used for https://github.com/moby/moby/blob/v24.0.6/api/types/container/config.go#L48
-	Timeout time.Duration `json:"timeout,omitempty" yaml:"timeout,omitempty"`
+	Timeout time.Duration `json:"timeout,omitempty"`
 
 	// StartPeriod - used for https://github.com/moby/moby/blob/v24.0.6/api/types/container/config.go#L49
-	StartPeriod time.Duration `json:"start_period,omitempty" yaml:"start_period,omitempty"`
+	StartPeriod time.Duration `json:"start_period,omitempty"`
 
 	// Retries - used for https://github.com/moby/moby/blob/v24.0.6/api/types/container/config.go#L53
-	Retries int `json:"retries,omitempty" yaml:"retries,omitempty"`
+	Retries int `json:"retries,omitempty"`
 }
 
+// LogConfig allow specifying Docker logs config.
 type LogConfig struct {
 	// Type - used for https://github.com/moby/moby/blob/v24.0.6/api/types/container/hostconfig.go#L321
-	Type string `json:"type,omitempty" yaml:"type,omitempty"`
+	Type string `json:"type,omitempty"`
 
 	// Config - used for https://github.com/moby/moby/blob/v24.0.6/api/types/container/hostconfig.go#L322
-	Config map[string]string `json:"config,omitempty" yaml:"config,omitempty"`
+	Config map[string]string `json:"config,omitempty"`
 }
 
+// RestartPolicy allow specifying Docker restart policy config.
 type RestartPolicy struct {
 	// Name - used for https://github.com/moby/moby/blob/v24.0.6/api/types/container/hostconfig.go#L274
 	Name string
@@ -322,239 +333,252 @@ type RestartPolicy struct {
 	MaximumRetryCount int
 }
 
+// Resources allow specifying Docker resources config.
 type Resources struct {
 	// CPUShares - used for https://github.com/moby/moby/blob/v24.0.6/api/types/container/hostconfig.go#L328
-	CPUShares int64 `json:"cpu_shares,omitempty" yaml:"cpu_shares,omitempty"`
+	CPUShares int64 `json:"cpu_shares,omitempty"`
 
 	// Memory - used for https://github.com/moby/moby/blob/v24.0.6/api/types/container/hostconfig.go#L329
-	Memory int64 `json:"memory,omitempty" yaml:"memory,omitempty"`
+	Memory int64 `json:"memory,omitempty"`
 
 	// NanoCPUs - used for https://github.com/moby/moby/blob/v24.0.6/api/types/container/hostconfig.go#L330
-	NanoCPUs int64 `json:"nano_cp_us,omitempty" yaml:"nano_cp_us,omitempty"`
+	NanoCPUs int64 `json:"nano_cp_us,omitempty"`
 
 	// CgroupParent - used for https://github.com/moby/moby/blob/v24.0.6/api/types/container/hostconfig.go#L333
-	CgroupParent string `json:"cgroup_parent,omitempty" yaml:"cgroup_parent,omitempty"`
+	CgroupParent string `json:"cgroup_parent,omitempty"`
 
 	// BlkioWeight - used for https://github.com/moby/moby/blob/v24.0.6/api/types/container/hostconfig.go#L334
-	BlkioWeight uint16 `json:"blkio_weight,omitempty" yaml:"blkio_weight,omitempty"`
+	BlkioWeight uint16 `json:"blkio_weight,omitempty"`
 
 	// BlkioWeightDevice - used for https://github.com/moby/moby/blob/v24.0.6/api/types/container/hostconfig.go#L335
-	BlkioWeightDevice []WeightDevice `json:"blkio_weight_device,omitempty" yaml:"blkio_weight_device,omitempty"`
+	BlkioWeightDevice []WeightDevice `json:"blkio_weight_device,omitempty"`
 
 	// BlkioDeviceReadBps - used for https://github.com/moby/moby/blob/v24.0.6/api/types/container/hostconfig.go#L336
-	BlkioDeviceReadBps []ThrottleDevice `json:"blkio_device_read_bps,omitempty" yaml:"blkio_device_read_bps,omitempty"`
+	BlkioDeviceReadBps []ThrottleDevice `json:"blkio_device_read_bps,omitempty"`
 
 	// BlkioDeviceWriteBps - used for https://github.com/moby/moby/blob/v24.0.6/api/types/container/hostconfig.go#L337
-	BlkioDeviceWriteBps []ThrottleDevice `json:"blkio_device_write_bps,omitempty" yaml:"blkio_device_write_bps,omitempty"`
+	BlkioDeviceWriteBps []ThrottleDevice `json:"blkio_device_write_bps,omitempty"`
 
 	// BlkioDeviceReadIOps - used for https://github.com/moby/moby/blob/v24.0.6/api/types/container/hostconfig.go#L338
-	BlkioDeviceReadIOps []ThrottleDevice `json:"blkio_device_read_i_ops,omitempty" yaml:"blkio_device_read_i_ops,omitempty"`
+	BlkioDeviceReadIOps []ThrottleDevice `json:"blkio_device_read_i_ops,omitempty"`
 
 	// BlkioDeviceWriteIOps - used for https://github.com/moby/moby/blob/v24.0.6/api/types/container/hostconfig.go#L339
-	BlkioDeviceWriteIOps []ThrottleDevice `json:"blkio_device_write_i_ops,omitempty" yaml:"blkio_device_write_i_ops,omitempty"`
+	BlkioDeviceWriteIOps []ThrottleDevice `json:"blkio_device_write_i_ops,omitempty"`
 
 	// CPUPeriod - used for https://github.com/moby/moby/blob/v24.0.6/api/types/container/hostconfig.go#L340
-	CPUPeriod int64 `json:"cpu_period,omitempty" yaml:"cpu_period,omitempty"`
+	CPUPeriod int64 `json:"cpu_period,omitempty"`
 
 	// CPUQuota - used for https://github.com/moby/moby/blob/v24.0.6/api/types/container/hostconfig.go#L341
-	CPUQuota int64 `json:"cpu_quota,omitempty" yaml:"cpu_quota,omitempty"`
+	CPUQuota int64 `json:"cpu_quota,omitempty"`
 
 	// CPURealtimePeriod - used for https://github.com/moby/moby/blob/v24.0.6/api/types/container/hostconfig.go#L342
-	CPURealtimePeriod int64 `json:"cpu_realtime_period,omitempty" yaml:"cpu_realtime_period,omitempty"`
+	CPURealtimePeriod int64 `json:"cpu_realtime_period,omitempty"`
 
 	// CPURealtimeRuntime - used for https://github.com/moby/moby/blob/v24.0.6/api/types/container/hostconfig.go#L343
-	CPURealtimeRuntime int64 `json:"cpu_realtime_runtime,omitempty" yaml:"cpu_realtime_runtime,omitempty"`
+	CPURealtimeRuntime int64 `json:"cpu_realtime_runtime,omitempty"`
 
 	// CpusetCpus - used for https://github.com/moby/moby/blob/v24.0.6/api/types/container/hostconfig.go#L344
-	CpusetCpus string `json:"cpuset_cpus,omitempty" yaml:"cpuset_cpus,omitempty"`
+	CpusetCpus string `json:"cpuset_cpus,omitempty"`
 
 	// CpusetMems - used for https://github.com/moby/moby/blob/v24.0.6/api/types/container/hostconfig.go#L345
-	CpusetMems string `json:"cpuset_mems,omitempty" yaml:"cpuset_mems,omitempty"`
+	CpusetMems string `json:"cpuset_mems,omitempty"`
 
 	// Devices - used for https://github.com/moby/moby/blob/v24.0.6/api/types/container/hostconfig.go#L346
-	Devices []DeviceMapping `json:"devices,omitempty" yaml:"devices,omitempty"`
+	Devices []DeviceMapping `json:"devices,omitempty"`
 
 	// DeviceCgroupRules - used for https://github.com/moby/moby/blob/v24.0.6/api/types/container/hostconfig.go#L347
-	DeviceCgroupRules []string `json:"device_cgroup_rules,omitempty" yaml:"device_cgroup_rules,omitempty"`
+	DeviceCgroupRules []string `json:"device_cgroup_rules,omitempty"`
 
 	// DeviceRequests - used for https://github.com/moby/moby/blob/v24.0.6/api/types/container/hostconfig.go#L348
-	DeviceRequests []DeviceRequest `json:"device_requests,omitempty" yaml:"device_requests,omitempty"`
+	DeviceRequests []DeviceRequest `json:"device_requests,omitempty"`
 
 	// KernelMemoryTCP - used for https://github.com/moby/moby/blob/v24.0.6/api/types/container/hostconfig.go#L353
-	KernelMemoryTCP int64 `json:"kernel_memory_tcp,omitempty" yaml:"kernel_memory_tcp,omitempty"`
+	KernelMemoryTCP int64 `json:"kernel_memory_tcp,omitempty"`
 
 	// MemoryReservation - used for https://github.com/moby/moby/blob/v24.0.6/api/types/container/hostconfig.go#L354
-	MemoryReservation int64 `json:"memory_reservation,omitempty" yaml:"memory_reservation,omitempty"`
+	MemoryReservation int64 `json:"memory_reservation,omitempty"`
 
 	// MemorySwap - used for https://github.com/moby/moby/blob/v24.0.6/api/types/container/hostconfig.go#L355
-	MemorySwap int64 `json:"memory_swap,omitempty" yaml:"memory_swap,omitempty"`
+	MemorySwap int64 `json:"memory_swap,omitempty"`
 
 	// MemorySwappiness - used for https://github.com/moby/moby/blob/v24.0.6/api/types/container/hostconfig.go#L356
-	MemorySwappiness *int64 `json:"memory_swappiness,omitempty" yaml:"memory_swappiness,omitempty"`
+	MemorySwappiness *int64 `json:"memory_swappiness,omitempty"`
 
 	// OomKillDisable - used for https://github.com/moby/moby/blob/v24.0.6/api/types/container/hostconfig.go#L357
-	OomKillDisable *bool `json:"oom_kill_disable,omitempty" yaml:"oom_kill_disable,omitempty"`
+	OomKillDisable *bool `json:"oom_kill_disable,omitempty"`
 
 	// PidsLimit - used for https://github.com/moby/moby/blob/v24.0.6/api/types/container/hostconfig.go#L358
-	PidsLimit *int64 `json:"pids_limit,omitempty" yaml:"pids_limit,omitempty"`
+	PidsLimit *int64 `json:"pids_limit,omitempty"`
 
 	// Ulimits - used for https://github.com/moby/moby/blob/v24.0.6/api/types/container/hostconfig.go#L359
-	Ulimits []Ulimit `json:"ulimits,omitempty" yaml:"ulimits,omitempty"`
+	Ulimits []Ulimit `json:"ulimits,omitempty"`
 
 	// CPUCount - used for https://github.com/moby/moby/blob/v24.0.6/api/types/container/hostconfig.go#L362
-	CPUCount int64 `json:"cpu_count,omitempty" yaml:"cpu_count,omitempty"`
+	CPUCount int64 `json:"cpu_count,omitempty"`
 
 	// CPUPercent - used for https://github.com/moby/moby/blob/v24.0.6/api/types/container/hostconfig.go#L363
-	CPUPercent int64 `json:"cpu_percent,omitempty" yaml:"cpu_percent,omitempty"`
+	CPUPercent int64 `json:"cpu_percent,omitempty"`
 
 	// IOMaximumIOps - used for https://github.com/moby/moby/blob/v24.0.6/api/types/container/hostconfig.go#L364
-	IOMaximumIOps uint64 `json:"io_maximum_i_ops,omitempty" yaml:"io_maximum_i_ops,omitempty"`
+	IOMaximumIOps uint64 `json:"io_maximum_i_ops,omitempty"`
 
 	// IOMaximumBandwidth - used for https://github.com/moby/moby/blob/v24.0.6/api/types/container/hostconfig.go#L365
-	IOMaximumBandwidth uint64 `json:"io_maximum_bandwidth,omitempty" yaml:"io_maximum_bandwidth,omitempty"`
+	IOMaximumBandwidth uint64 `json:"io_maximum_bandwidth,omitempty"`
 }
 
+// WeightDevice allow specifying Docker weight device config.
 type WeightDevice struct {
 	// Path - used for https://github.com/moby/moby/blob/v24.0.6/api/types/blkiodev/blkio.go#L7
-	Path string `json:"path,omitempty" yaml:"path,omitempty"`
+	Path string `json:"path,omitempty"`
 
 	// Weight - used for https://github.com/moby/moby/blob/v24.0.6/api/types/blkiodev/blkio.go#L8
-	Weight uint16 `json:"weight,omitempty" yaml:"weight,omitempty"`
+	Weight uint16 `json:"weight,omitempty"`
 }
 
+// ThrottleDevice allow specifying Docker throttle device config.
 type ThrottleDevice struct {
 	// Path - used for https://github.com/moby/moby/blob/v24.0.6/api/types/blkiodev/blkio.go#L17
-	Path string `json:"path,omitempty" yaml:"path,omitempty"`
+	Path string `json:"path,omitempty"`
 
 	// Rate - used for https://github.com/moby/moby/blob/v24.0.6/api/types/blkiodev/blkio.go#L18
-	Rate uint64 `json:"rate,omitempty" yaml:"rate,omitempty"`
+	Rate uint64 `json:"rate,omitempty"`
 }
 
+// DeviceMapping allow specifying Docker device mapping config.
 type DeviceMapping struct {
 	// PathOnHost - used for https://github.com/moby/moby/blob/v24.0.6/api/types/container/hostconfig.go#L267
-	PathOnHost string `json:"path_on_host,omitempty" yaml:"path_on_host,omitempty"`
+	PathOnHost string `json:"path_on_host,omitempty"`
 
 	// PathInContainer - used for https://github.com/moby/moby/blob/v24.0.6/api/types/container/hostconfig.go#L268
-	PathInContainer string `json:"path_in_container,omitempty" yaml:"path_in_container,omitempty"`
+	PathInContainer string `json:"path_in_container,omitempty"`
 
 	// CgroupPermissions - used for https://github.com/moby/moby/blob/v24.0.6/api/types/container/hostconfig.go#L269
-	CgroupPermissions string `json:"cgroup_permissions,omitempty" yaml:"cgroup_permissions,omitempty"`
+	CgroupPermissions string `json:"cgroup_permissions,omitempty"`
 }
 
+// DeviceRequest allow specifying Docker device request config.
 type DeviceRequest struct {
 	// Driver - used for https://github.com/moby/moby/blob/v24.0.6/api/types/container/hostconfig.go#L258
-	Driver string `json:"driver,omitempty" yaml:"driver,omitempty"`
+	Driver string `json:"driver,omitempty"`
 
 	// Count - used for https://github.com/moby/moby/blob/v24.0.6/api/types/container/hostconfig.go#L259
-	Count int `json:"count,omitempty" yaml:"count,omitempty"`
+	Count int `json:"count,omitempty"`
 
 	// DeviceIDs - used for https://github.com/moby/moby/blob/v24.0.6/api/types/container/hostconfig.go#L260
-	DeviceIDs []string `json:"device_ids,omitempty" yaml:"device_ids,omitempty"`
+	DeviceIDs []string `json:"device_ids,omitempty"`
 
 	// Capabilities - used for https://github.com/moby/moby/blob/v24.0.6/api/types/container/hostconfig.go#L261
-	Capabilities [][]string `json:"capabilities,omitempty" yaml:"capabilities,omitempty"`
+	Capabilities [][]string `json:"capabilities,omitempty"`
 
 	// Options - used for https://github.com/moby/moby/blob/v24.0.6/api/types/container/hostconfig.go#L262
-	Options map[string]string `json:"options,omitempty" yaml:"options,omitempty"`
+	Options map[string]string `json:"options,omitempty"`
 }
 
+// Ulimit allow specifying Docker ulimit config.
 type Ulimit struct {
 	// Name - used for https://github.com/docker/go-units/blob/master/ulimit.go#L11
-	Name string `json:"name,omitempty" yaml:"name,omitempty"`
+	Name string `json:"name,omitempty"`
 
 	// Hard - used for https://github.com/docker/go-units/blob/master/ulimit.go#L12
-	Hard int64 `json:"hard,omitempty" yaml:"hard,omitempty"`
+	Hard int64 `json:"hard,omitempty"`
 
 	// Soft - used for https://github.com/docker/go-units/blob/master/ulimit.go#L13
-	Soft int64 `json:"soft,omitempty" yaml:"soft,omitempty"`
+	Soft int64 `json:"soft,omitempty"`
 }
 
+// Mount allow specifying a Docker mount.
 type Mount struct {
 	// Type - used for https://github.com/moby/moby/blob/v24.0.6/api/types/mount/mount.go#L26
-	Type mount.Type `json:"type,omitempty" yaml:"type,omitempty"`
+	Type mount.Type `json:"type,omitempty"`
 
 	// Source - used for https://github.com/moby/moby/blob/v24.0.6/api/types/mount/mount.go#L30
-	Source string `json:"source,omitempty" yaml:"source,omitempty"`
+	Source string `json:"source,omitempty"`
 
 	// Target - used for https://github.com/moby/moby/blob/v24.0.6/api/types/mount/mount.go#L31
-	Target string `json:"target,omitempty" yaml:"target,omitempty"`
+	Target string `json:"target,omitempty"`
 
 	// ReadOnly - used for https://github.com/moby/moby/blob/v24.0.6/api/types/mount/mount.go#L32
-	ReadOnly bool `json:"read_only,omitempty" yaml:"read_only,omitempty"`
+	ReadOnly bool `json:"read_only,omitempty"`
 
 	// Consistency - used for https://github.com/moby/moby/blob/v24.0.6/api/types/mount/mount.go#L33
-	Consistency mount.Consistency `json:"consistency,omitempty" yaml:"consistency,omitempty"`
+	Consistency mount.Consistency `json:"consistency,omitempty"`
 
 	// BindOptions - used for https://github.com/moby/moby/blob/v24.0.6/api/types/mount/mount.go#L35
-	BindOptions *BindOptions `json:"bind_options,omitempty" yaml:"bind_options,omitempty"`
+	BindOptions *BindOptions `json:"bind_options,omitempty"`
 
 	// VolumeOptions - used for https://github.com/moby/moby/blob/v24.0.6/api/types/mount/mount.go#L36
-	VolumeOptions *VolumeOptions `json:"volume_options,omitempty" yaml:"volume_options,omitempty"`
+	VolumeOptions *VolumeOptions `json:"volume_options,omitempty"`
 
 	// TmpfsOptions - used for https://github.com/moby/moby/blob/v24.0.6/api/types/mount/mount.go#L37
-	TmpfsOptions *TmpfsOptions `json:"tmpfs_options,omitempty" yaml:"tmpfs_options,omitempty"`
+	TmpfsOptions *TmpfsOptions `json:"tmpfs_options,omitempty"`
 
 	// OnMount - an optional function to be called before the mount is being created.
 	// this can be useful for lazy evaluation such as creating directories or resources only if needed.
 	// available only via code, not available in config files
-	OnMount func() `json:"-" yaml:"-"`
+	OnMount func() `json:"-"`
 }
 
+// BindOptions allow specifying Docker bind params for a Docker Mount.
 type BindOptions struct {
 	// Propagation - used for https://github.com/moby/moby/blob/v24.0.6/api/types/mount/mount.go#L85
-	Propagation mount.Propagation `json:"propagation,omitempty" yaml:"propagation,omitempty"`
+	Propagation mount.Propagation `json:"propagation,omitempty"`
 
 	// NonRecursive - used for https://github.com/moby/moby/blob/v24.0.6/api/types/mount/mount.go#L86
-	NonRecursive bool `json:"non_recursive,omitempty" yaml:"non_recursive,omitempty"`
+	NonRecursive bool `json:"non_recursive,omitempty"`
 
 	// CreateMountpoint - used for https://github.com/moby/moby/blob/v24.0.6/api/types/mount/mount.go#L87
-	CreateMountpoint bool `json:"create_mountpoint,omitempty" yaml:"create_mountpoint,omitempty"`
+	CreateMountpoint bool `json:"create_mountpoint,omitempty"`
 }
 
+// VolumeOptions allow specifying Docker volume params for a Docker Mount.
 type VolumeOptions struct {
 	// NoCopy - used for https://github.com/moby/moby/blob/v24.0.6/api/types/mount/mount.go#L92
-	NoCopy bool `json:"no_copy,omitempty" yaml:"no_copy,omitempty"`
+	NoCopy bool `json:"no_copy,omitempty"`
 
 	// Labels - used for https://github.com/moby/moby/blob/v24.0.6/api/types/mount/mount.go#L93
-	Labels map[string]string `json:"labels,omitempty" yaml:"labels,omitempty"`
+	Labels map[string]string `json:"labels,omitempty"`
 
 	// DriverConfig - used for https://github.com/moby/moby/blob/v24.0.6/api/types/mount/mount.go#L94
-	DriverConfig *Driver `json:"driver_config,omitempty" yaml:"driver_config,omitempty"`
+	DriverConfig *Driver `json:"driver_config,omitempty"`
 }
 
+// Driver allow specifying Docker Driver.
 type Driver struct {
 	// Name - used for https://github.com/moby/moby/blob/v24.0.6/api/types/mount/mount.go#L99
-	Name string `json:"name,omitempty" yaml:"name,omitempty"`
+	Name string `json:"name,omitempty"`
 
 	// Options - used for https://github.com/moby/moby/blob/v24.0.6/api/types/mount/mount.go#L100
-	Options map[string]string `json:"options,omitempty" yaml:"options,omitempty"`
+	Options map[string]string `json:"options,omitempty"`
 }
 
+// TmpfsOptions allow specifying Docker tmpfs config.
 type TmpfsOptions struct {
 	// SizeBytes - used for https://github.com/moby/moby/blob/v24.0.6/api/types/mount/mount.go#L113
-	SizeBytes int64 `json:"size_bytes,omitempty" yaml:"size_bytes,omitempty"`
+	SizeBytes int64 `json:"size_bytes,omitempty"`
 
 	// Mode - used for https://github.com/moby/moby/blob/v24.0.6/api/types/mount/mount.go#L115
-	Mode os.FileMode `json:"mode,omitempty" yaml:"mode,omitempty"`
+	Mode os.FileMode `json:"mode,omitempty"`
 }
 
+// PlatformConfig allow specifying Docker platform config.
 type PlatformConfig struct {
 	// Architecture - used for https://github.com/opencontainers/image-spec/blob/v1.1.0-rc4/specs-go/v1/descriptor.go#L56
-	Architecture string `json:"architecture,omitempty" yaml:"architecture,omitempty"`
+	Architecture string `json:"architecture,omitempty"`
 
 	// OS - used for https://github.com/opencontainers/image-spec/blob/v1.1.0-rc4/specs-go/v1/descriptor.go#L56
-	OS string `json:"os,omitempty" yaml:"os,omitempty"`
+	OS string `json:"os,omitempty"`
 
 	// OSVersion - used for https://github.com/opencontainers/image-spec/blob/v1.1.0-rc4/specs-go/v1/descriptor.go#L56
-	OSVersion string `json:"os_version,omitempty" yaml:"os_version,omitempty"`
+	OSVersion string `json:"os_version,omitempty"`
 
 	// OSFeatures - used for https://github.com/opencontainers/image-spec/blob/v1.1.0-rc4/specs-go/v1/descriptor.go#L56
-	OSFeatures []string `json:"os_features,omitempty" yaml:"os_features,omitempty"`
+	OSFeatures []string `json:"os_features,omitempty"`
 
 	// Variant - used for https://github.com/opencontainers/image-spec/blob/v1.1.0-rc4/specs-go/v1/descriptor.go#L56
-	Variant string `json:"variant,omitempty" yaml:"variant,omitempty"`
+	Variant string `json:"variant,omitempty"`
 }
 
+// StrSlice is a wrapper for strslice.StrSlice that works with yaml in addition to json.
 type StrSlice strslice.StrSlice
 
 func (s *StrSlice) UnmarshalYAML(value *yaml.Node) error {
@@ -574,6 +598,7 @@ func (s *StrSlice) UnmarshalYAML(value *yaml.Node) error {
 	return nil
 }
 
+// runConfig holds the configuration for running a Docker container.
 type runConfig struct {
 	hostname         string
 	containerConfig  *container.Config
@@ -583,6 +608,7 @@ type runConfig struct {
 	waiters          []waiterFunc
 }
 
+// initialize validates and initializes the runConfig based on the provided Config and network information.
 func (c Config) initialize(network *Network, imageCloneTag string) (*runConfig, error) {
 	if c.Name == "" {
 		return nil, ErrInvalidConfig{Property: "name", Msg: "cannot be empty"}
@@ -920,6 +946,7 @@ func mapSlice[T1, T2 any](slice []T1, mapper func(T1) T2) []T2 {
 	return result
 }
 
+// ErrInvalidConfig represents an error in case an invalid config is given.
 type ErrInvalidConfig struct {
 	Property string
 	Msg      string

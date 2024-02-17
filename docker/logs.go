@@ -1,3 +1,7 @@
+// Copyright 2024 HUMAN. All rights reserved.
+// Use of this source code is governed by a MIT style
+// license that can be found in the LICENSE file.
+
 package docker
 
 import (
@@ -12,6 +16,7 @@ import (
 
 type logHandler func(timestamp time.Time, text string, stream stdcopy.StdType) (stop bool)
 
+// followLogs attaches to container's output
 func followLogs(ctx context.Context, cli *client.Client, id string, handler logHandler) error {
 	containerReader, err := cli.ContainerLogs(ctx, id, types.ContainerLogsOptions{
 		ShowStdout: true,
