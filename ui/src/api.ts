@@ -1,3 +1,7 @@
+// Copyright 2024 HUMAN. All rights reserved.
+// Use of this source code is governed by a MIT style
+// license that can be found in the LICENSE file.
+
 import axios, { CancelTokenSource } from 'axios';
 
 const BASE_URL = process.env.REACT_APP_BASE_URL || '';
@@ -11,8 +15,7 @@ export interface Component {
     id: string;
     type: string;
     status: 'stopped' | 'failed' | 'starting' | 'running' | 'finished';
-    info: any;
-    env_vars: { [key: string]: string };
+    config: any;
 }
 
 export interface Message {

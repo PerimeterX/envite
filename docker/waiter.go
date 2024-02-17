@@ -1,3 +1,7 @@
+// Copyright 2024 HUMAN. All rights reserved.
+// Use of this source code is governed by a MIT style
+// license that can be found in the LICENSE file.
+
 package docker
 
 import (
@@ -10,6 +14,7 @@ import (
 	"time"
 )
 
+// WaitForLog creates a waiter for waiting until a specific string is found in the container logs.
 func WaitForLog(s string) Waiter {
 	return Waiter{
 		Type:   WaiterTypeString,
@@ -17,6 +22,7 @@ func WaitForLog(s string) Waiter {
 	}
 }
 
+// WaitForLogRegex creates a waiter for waiting until a specific regular expression is matched in the container logs.
 func WaitForLogRegex(regexp string) Waiter {
 	return Waiter{
 		Type:  WaiterTypeRegex,
@@ -24,6 +30,7 @@ func WaitForLogRegex(regexp string) Waiter {
 	}
 }
 
+// WaitForDuration creates a waiter for waiting for a specific duration.
 func WaitForDuration(duration string) Waiter {
 	return Waiter{
 		Type:     WaiterTypeDuration,
@@ -31,8 +38,10 @@ func WaitForDuration(duration string) Waiter {
 	}
 }
 
+// waiterFunc is a function signature for the different types of waiters.
 type waiterFunc func(ctx context.Context, cli *client.Client, containerID string, isNewContainer bool) error
 
+// validateWaiter validates the provided waiter and returns the corresponding waiterFunc.
 func validateWaiter(w Waiter) (waiterFunc, error) {
 	switch w.Type {
 	case WaiterTypeString:
@@ -93,6 +102,7 @@ func validateWaiter(w Waiter) (waiterFunc, error) {
 	return nil, ErrInvalidWaiterType{Type: w.Type}
 }
 
+// ErrInvalidWaiterType represents an error for an invalid waiter type.
 type ErrInvalidWaiterType struct {
 	Type WaiterType
 }
@@ -101,6 +111,7 @@ func (e ErrInvalidWaiterType) Error() string {
 	return fmt.Sprintf("invalid waiter type %s", e.Type)
 }
 
+// ErrContainerStopped represents an error when the container stops without reaching the expected condition.
 type ErrContainerStopped struct {
 	without string
 }
