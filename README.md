@@ -45,7 +45,7 @@ Here are the popular alternatives and how they compare with ENVITE.
 ##### Using Kubernetes for production, CI, and development
 
 This method has a huge advantage: you only have to describe your environment once. This means you maintain only
-one description of your environments - using Kubernetes manifest files, but more importantly, the way your components
+one description of your environments - using Kubernetes manifest files. But more importantly, the way your components
 are deployed and provisioned in production is identical to the way they are in development in CI.
 
 Let's talk about some possible downsides:
@@ -56,7 +56,7 @@ to solve:
     * How do you rebuild container images each time you perform a code change? This process can take several minutes
 every time you perform any code change.
     * How do you manage and override image tag values in your original manifest files? Does it mean you maintain
-separate manifest files for production and dev purposes?
+separate manifest files for production and dev purposes?  Do you have to manually override environment variables?
     * Can you provide hot reloading or similar tools in environments where this is desired?
   * If you choose to avoid developing components in containers, and simply run them outside the cluster:
     * How easy it is to configure and run a component outside the cluster?
@@ -119,9 +119,9 @@ In addition, testcontainers have 2 more downsides:
 ENVITE is quite close to testcontainers. It allows you to either write Go, or use YAML files to describe your env.
 It can be used as a Go library, or as a CLI tool directly without actually writing code.
 
-ENVITE is designed around running seamlessly inside and outside docker containers, to allow simple debugging of
-components you currently work on, while running all the rest in containers, connecting everything fluently, and
-providing you with the best tooling to manage and monitor the entire environment.
+ENVITE is designed around running seamlessly inside and outside docker containers. This allows simple debugging of
+components you currently work on, while running all the rest in containers. It connects everything fluently, and
+provides the best tooling to manage and monitor the entire environment. You'll see it in action in a minute.
 
 At this point, you will have to manage ENVITE files/code separately from your production environment, but we do want
 to add support to read directly from Helm and Kustomize files to allow maintaining only one copy of production env.
