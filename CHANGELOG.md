@@ -27,3 +27,8 @@ Prepare for open source.
 - Go docs.
 - Improved README.md.
 - Added several small changes to the SDK API to allow smoother experience in the CLI.
+
+
+## [[0.0.4](https://github.com/PerimeterX/envite/compare/v0.0.3...v0.0.4)] - 2024-02-21
+
+Fix all dependency vulnerabilities.

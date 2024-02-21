@@ -780,7 +780,7 @@ func (c *RestartPolicy) build() container.RestartPolicy {
 	}
 
 	return container.RestartPolicy{
-		Name:              c.Name,
+		Name:              container.RestartPolicyMode(c.Name),
 		MaximumRetryCount: c.MaximumRetryCount,
 	}
 }
