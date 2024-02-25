@@ -19,14 +19,13 @@ A framework to manage development and testing environments.
 
 ## Contents
 
-* [Why ENVITE?](#why-envite-)
-  - [So why not stick to what you use today?](#so-why-not-stick-to-what-you-use-today-)
+* [Why ENVITE?](#why-envite)
   - [Kubernetes](#kubernetes)
   - [Docker Compose](#docker-compose)
-  - [Remote Staging/Dev Environments](#remote-staging-dev-environments)
+  - [Remote Staging/Dev Environments](#remote-stagingdev-environments)
   - [TestContainers](#testcontainers)
-  - [How's ENVITE Different?](#how-s-envite-different-)
-  - [Does ENVITE Meet My Need?](#does-envite-meet-my-need-)
+  - [How's ENVITE Different?](#hows-envite-different)
+  - [Does ENVITE Meet My Need?](#does-envite-meet-my-need)
 * [Usage](#usage)
   - [Go SDK Usage](#go-sdk-usage)
   - [CLI Usage](#cli-usage)
@@ -40,8 +39,6 @@ A framework to manage development and testing environments.
 * [ENVITE Logo](#envite-logo)
 
 ## Why ENVITE?
-
-#### So why not stick to what you use today?
 
 Why should I Choose ENVITE? Why not stick to what you have today?
 
