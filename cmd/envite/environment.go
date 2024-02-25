@@ -1,4 +1,4 @@
-// Copyright 2024 HUMAN. All rights reserved.
+// Copyright 2024 HUMAN Security.
 // Use of this source code is governed by a MIT style
 // license that can be found in the LICENSE file.
 
@@ -64,6 +64,14 @@ type builderFunc func(data []byte, flags flagValues, envID string) (envite.Compo
 // mapping maps component types to their respective builder functions.
 // This is the list of component types supported by the CLI,
 // for each supported type, we need to map to a builderFunc.
+//
+// the CLI supports the following component types,
+// each type supports additional config params as specified below:
+// *type: "docker component", all config params are available in docker.Config - https://github.com/PerimeterX/envite/blob/b4e9f545226c990a1025b9ca198856faff8b5eed/docker/config.go#L23
+// *type: "mongo seed", all config params are available in mongo.SeedConfig - https://github.com/PerimeterX/envite/blob/b4e9f545226c990a1025b9ca198856faff8b5eed/seed/mongo/config.go#L10
+//
+// a full YAML example can be found in the root README.md at
+// https://github.com/PerimeterX/envite/blob/main/README.md#cli-usage
 var mapping = map[string]builderFunc{
 	docker.ComponentType: buildDocker,
 	mongo.ComponentType:  buildMongoSeed,
