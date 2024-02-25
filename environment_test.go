@@ -1,4 +1,4 @@
-// Copyright 2024 HUMAN. All rights reserved.
+// Copyright 2024 HUMAN Security.
 // Use of this source code is governed by a MIT style
 // license that can be found in the LICENSE file.
 
@@ -12,7 +12,6 @@ import (
 )
 
 type mockComponent struct {
-	id            string
 	status        ComponentStatus
 	shouldFail    bool
 	prepareCalled bool
@@ -21,10 +20,6 @@ type mockComponent struct {
 	cleanupCalled bool
 	onStart       func()
 	onStop        func()
-}
-
-func (m *mockComponent) ID() string {
-	return m.id
 }
 
 func (m *mockComponent) Type() string {
@@ -90,9 +85,9 @@ func (m *mockComponent) initFlags() {
 
 func TestEnvironmentManagement(t *testing.T) {
 	// Create mock components
-	component1 := &mockComponent{id: "component-1"}
-	component2 := &mockComponent{id: "component-2"}
-	component3 := &mockComponent{id: "component-3"}
+	component1 := &mockComponent{}
+	component2 := &mockComponent{}
+	component3 := &mockComponent{}
 
 	component1.onStart = func() {
 		assert.True(t, component1.prepareCalled)
@@ -182,7 +177,10 @@ func TestEnvironmentManagement(t *testing.T) {
 	// Create a mock environment
 	env, err := NewEnvironment(
 		"test-env",
-		NewComponentGraph().AddLayer(component1).AddLayer(component2).AddLayer(component3),
+		NewComponentGraph().
+			AddLayer(map[string]Component{"component-1": component1}).
+			AddLayer(map[string]Component{"component-2": component2}).
+			AddLayer(map[string]Component{"component-3": component3}),
 	)
 	assert.NoError(t, err)
 
@@ -245,13 +243,16 @@ func TestEnvironmentManagement(t *testing.T) {
 
 func TestSelectiveAndZeroComponentApplication(t *testing.T) {
 	// Setup
-	component1 := &mockComponent{id: "component-1"}
-	component2 := &mockComponent{id: "component-2"}
-	component3 := &mockComponent{id: "component-3"}
+	component1 := &mockComponent{}
+	component2 := &mockComponent{}
+	component3 := &mockComponent{}
 
 	env, err := NewEnvironment(
 		"test-env",
-		NewComponentGraph().AddLayer(component1).AddLayer(component2).AddLayer(component3),
+		NewComponentGraph().
+			AddLayer(map[string]Component{"component-1": component1}).
+			AddLayer(map[string]Component{"component-2": component2}).
+			AddLayer(map[string]Component{"component-3": component3}),
 	)
 	assert.NoError(t, err)
 
@@ -281,16 +282,17 @@ func TestSelectiveAndZeroComponentApplication(t *testing.T) {
 
 func TestErrorHandlingDuringComponentManagement(t *testing.T) {
 	// Setup with multiple components, including one that will fail on start
-	componentFailOnStart := &mockComponent{id: "fail-start", shouldFail: true}
-	componentSuccess1 := &mockComponent{id: "success-1"}
-	componentSuccess2 := &mockComponent{id: "success-2"}
+	componentFailOnStart := &mockComponent{shouldFail: true}
+	componentSuccess1 := &mockComponent{}
+	componentSuccess2 := &mockComponent{}
 
 	env, err := NewEnvironment(
 		"test-env",
 		NewComponentGraph().
-			AddLayer(componentSuccess1).
-			AddLayer(componentFailOnStart). // Ensure this component is in the middle to test error handling
-			AddLayer(componentSuccess2),
+			AddLayer(map[string]Component{"success-1": componentSuccess1}).
+			// Ensure this component is in the middle to test error handling
+			AddLayer(map[string]Component{"fail-start": componentFailOnStart}).
+			AddLayer(map[string]Component{"success-2": componentSuccess2}),
 	)
 	assert.NoError(t, err)
 

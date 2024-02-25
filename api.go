@@ -1,4 +1,4 @@
-// Copyright 2024 HUMAN. All rights reserved.
+// Copyright 2024 HUMAN Security.
 // Use of this source code is governed by a MIT style
 // license that can be found in the LICENSE file.
 
@@ -84,6 +84,9 @@ func buildComponentInfo(c Component) (map[string]any, error) {
 		return nil, err
 	}
 
+	if result == nil {
+		result = make(map[string]any)
+	}
 	result["type"] = c.Type()
 	return result, nil
 }
