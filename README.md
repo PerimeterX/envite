@@ -284,9 +284,7 @@ With either approach, the result is a UI served via the browser. It enables mana
 initiating and halting components, conducting detailed inspections, debugging, and providing all essential tools
 for development and testing, as well as automated and CI/CD processes.
 
-<video>
-  <source src="https://raw.githubusercontent.com/PerimeterX/envite/assets/demo.mp4" type="video/mp4">
-</video>
+[![ENVITE Demo](https://raw.githubusercontent.com/PerimeterX/envite/assets/demo.gif)](https://raw.githubusercontent.com/PerimeterX/envite/assets/demo.mp4)
 
 Voilà! You now have a fully usable dev and testing environment.
 
