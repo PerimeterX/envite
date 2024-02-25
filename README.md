@@ -40,6 +40,8 @@ A framework to manage development and testing environments.
 
 ## Why ENVITE?
 
+<img align="right" width="200" alt="marshmallow-gopher" src="https://raw.githubusercontent.com/PerimeterX/envite/assets/logo3.svg">
+
 Why should I Choose ENVITE? Why not stick to what you have today?
 
 For starters, you might want to do that. Let's see when you **actually** need ENVITE.
