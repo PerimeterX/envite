@@ -320,7 +320,7 @@ All flags and options are described via envite -help command:
 #### Adding Custom Components
 
 Integrate your own components into the environment, either as Docker containers or by providing implementations
-of the `envite.Component` interface.
+of the [envite.Component](https://github.com/PerimeterX/envite/blob/b4e9f545226c990a1025b9ca198856faff8b5eed/component.go#L13) interface.
 
 ## Key Elements of ENVITE
 
