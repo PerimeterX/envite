@@ -276,6 +276,8 @@ components:
 ```
 3. Run ENVITE: `envite`.
 
+The full list of CLI supported components can be found [here](https://github.com/PerimeterX/envite/blob/b069952815519b3026551485af9e63be1bdca751/cmd/envite/environment.go#L68).
+
 #### Demo
 
 With either approach, the result is a UI served via the browser. It enables managing the environment, monitoring,
