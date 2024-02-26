@@ -6,6 +6,7 @@
 [![Run Tests](https://img.shields.io/github/actions/workflow/status/perimeterx/envite/go.yml?branch=main&logo=github&label=Run%20Tests)](https://github.com/PerimeterX/envite/actions/workflows/go.yml?query=branch%3Amain)
 [![Dependency Review](https://img.shields.io/github/actions/workflow/status/perimeterx/envite/dependency-review.yml?logo=github&label=Dependency%20Review)](https://github.com/PerimeterX/envite/actions/workflows/dependency-review.yml?query=branch%3Amain)
 [![Go Report Card](https://goreportcard.com/badge/github.com/perimeterx/envite)](https://goreportcard.com/report/github.com/perimeterx/envite)
+![Manual Code Coverage](https://img.shields.io/badge/coverage-83.3%25-green)
 [![Go Reference](https://pkg.go.dev/badge/github.com/perimeterx/envite.svg)](https://pkg.go.dev/github.com/perimeterx/envite)
 [![Licence](https://img.shields.io/github/license/perimeterx/envite)](LICENSE)
 [![Latest Release](https://img.shields.io/github/v/release/perimeterx/envite)](https://github.com/PerimeterX/envite/releases)
