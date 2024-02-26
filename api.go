@@ -11,6 +11,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/gorilla/mux"
+	"github.com/perimeterx/envite/ui"
 	"io"
 	"net/http"
 	"strings"
@@ -354,7 +355,7 @@ type webHandler struct {
 // initializing it with a file server that serves the bundled assets.
 func newWebHandler() *webHandler {
 	return &webHandler{
-		fileServer: http.FileServer(AssetFile()),
+		fileServer: http.FileServer(ui.AssetFile()),
 	}
 }
 
@@ -364,9 +365,9 @@ func (h webHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if len(path) > 0 && path[0] == '/' {
 		path = path[1:]
 	}
-	_, err := Asset(path)
+	_, err := ui.Asset(path)
 	if err != nil {
-		data, _ := Asset(indexFilePath)
+		data, _ := ui.Asset(indexFilePath)
 		http.ServeContent(w, r, indexFilePath, time.Time{}, bytes.NewReader(data))
 	} else {
 		h.fileServer.ServeHTTP(w, r)

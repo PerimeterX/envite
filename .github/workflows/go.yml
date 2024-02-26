@@ -21,5 +21,16 @@ jobs:
     - name: Build
       run: go build -v ./...
 
-    - name: Test
+    - name: Test all
       run: go test -v ./...
+
+    - name: Create coverage for main package
+      run: |
+        go test -v -cover ./... -coverprofile coverage.out -coverpkg ./...
+        go tool cover -func coverage.out -o coverage.out  # Replaces coverage.out with the analysis of coverage.out
+
+    - name: Go Coverage Badge
+      uses: tj-actions/coverage-badge-go@v1
+      with:
+        green: 80
+        filename: coverage.out
