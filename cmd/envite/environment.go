@@ -11,6 +11,7 @@ import (
 	"github.com/perimeterx/envite"
 	"github.com/perimeterx/envite/docker"
 	"github.com/perimeterx/envite/seed/mongo"
+	"github.com/perimeterx/envite/seed/redis"
 	"gopkg.in/yaml.v3"
 	"os"
 	"regexp"
@@ -69,12 +70,14 @@ type builderFunc func(data []byte, flags flagValues, envID string) (envite.Compo
 // each type supports additional config params as specified below:
 // *type: "docker component", all config params are available in docker.Config - https://github.com/PerimeterX/envite/blob/b4e9f545226c990a1025b9ca198856faff8b5eed/docker/config.go#L23
 // *type: "mongo seed", all config params are available in mongo.SeedConfig - https://github.com/PerimeterX/envite/blob/b4e9f545226c990a1025b9ca198856faff8b5eed/seed/mongo/config.go#L10
+// *type: "redis seed", all config params are available in redis.SeedConfig
 //
 // a full YAML example can be found in the root README.md at
 // https://github.com/PerimeterX/envite/blob/main/README.md#cli-usage
 var mapping = map[string]builderFunc{
 	docker.ComponentType: buildDocker,
 	mongo.ComponentType:  buildMongoSeed,
+	redis.ComponentType:  buildRedisSeed,
 }
 
 // buildComponent constructs a Component from raw YAML data.
