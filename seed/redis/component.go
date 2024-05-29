@@ -12,7 +12,6 @@ import (
 	"strconv"
 	"sync"
 	"sync/atomic"
-	"time"
 )
 
 // ComponentType represents the type of the redis seed component.
@@ -78,7 +77,7 @@ func (r *SeedComponent) seed(ctx context.Context) error {
 		return err
 	}
 
-	if err = r.HashSetEntries(ctx, err, client); err != nil {
+	if err = r.hashSetEntries(ctx, err, client); err != nil {
 		return err
 	}
 	r.logInsertions()
@@ -88,7 +87,7 @@ func (r *SeedComponent) seed(ctx context.Context) error {
 
 func (r *SeedComponent) setEntries(ctx context.Context, err error, client *redis.Client) error {
 	for _, entry := range r.config.Entries {
-		err = client.Set(ctx, entry.Key, entry.Value, entry.TTL*time.Second).Err()
+		err = client.Set(ctx, entry.Key, entry.Value, entry.TTL).Err()
 
 		if err != nil {
 			return err
@@ -97,7 +96,7 @@ func (r *SeedComponent) setEntries(ctx context.Context, err error, client *redis
 	return nil
 }
 
-func (r *SeedComponent) HashSetEntries(ctx context.Context, err error, client *redis.Client) error {
+func (r *SeedComponent) hashSetEntries(ctx context.Context, err error, client *redis.Client) error {
 	for _, hEntry := range r.config.HEntries {
 		err = client.HSet(ctx, hEntry.Key, hEntry.Values).Err()
 
@@ -105,7 +104,7 @@ func (r *SeedComponent) HashSetEntries(ctx context.Context, err error, client *r
 			return err
 		}
 		if hEntry.TTL > 0 {
-			err = client.Expire(ctx, hEntry.Key, hEntry.TTL*time.Second).Err()
+			err = client.Expire(ctx, hEntry.Key, hEntry.TTL).Err()
 			if err != nil {
 				return err
 			}
