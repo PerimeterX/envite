@@ -6,6 +6,7 @@ package redis
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"github.com/go-redis/redis/v8"
 	"github.com/perimeterx/envite"
@@ -62,6 +63,8 @@ func (r *SeedComponent) Start(ctx context.Context) error {
 	return nil
 }
 
+var errEmptyEntries = errors.New("no entries to seed")
+
 func (r *SeedComponent) seed(ctx context.Context) error {
 	r.writer.WriteString("starting redis seed")
 	client, err := r.clientProvider()
@@ -71,6 +74,11 @@ func (r *SeedComponent) seed(ctx context.Context) error {
 
 	if err = client.FlushAll(ctx).Err(); err != nil {
 		return err
+	}
+
+	if r.config.Entries == nil ||
+		(len(r.config.Entries.HSet) == 0 && len(r.config.Entries.Set) == 0) {
+		return errEmptyEntries
 	}
 
 	if err = r.setEntries(ctx, err, client); err != nil {
@@ -86,7 +94,7 @@ func (r *SeedComponent) seed(ctx context.Context) error {
 }
 
 func (r *SeedComponent) setEntries(ctx context.Context, err error, client *redis.Client) error {
-	for _, entry := range r.config.SetEntries {
+	for _, entry := range r.config.Entries.Set {
 		err = client.Set(ctx, entry.Key, entry.Value, entry.TTL).Err()
 
 		if err != nil {
@@ -97,7 +105,7 @@ func (r *SeedComponent) setEntries(ctx context.Context, err error, client *redis
 }
 
 func (r *SeedComponent) hashSetEntries(ctx context.Context, err error, client *redis.Client) error {
-	for _, hEntry := range r.config.HSetEntries {
+	for _, hEntry := range r.config.Entries.HSet {
 		err = client.HSet(ctx, hEntry.Key, hEntry.Values).Err()
 
 		if err != nil {
@@ -114,8 +122,8 @@ func (r *SeedComponent) hashSetEntries(ctx context.Context, err error, client *r
 }
 
 func (r *SeedComponent) logInsertions() {
-	count := len(r.config.SetEntries)
-	hashedCount := len(r.config.HSetEntries)
+	count := len(r.config.Entries.Set)
+	hashedCount := len(r.config.Entries.HSet)
 
 	r.writer.WriteString(fmt.Sprintf(
 		"inserted %s fields to %s and %s fields to %s",

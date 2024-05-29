@@ -19,11 +19,14 @@ type SeedConfig struct {
 	// if both ClientProvider and Address are provided, ClientProvider is used.
 	ClientProvider func() (*redis.Client, error) `json:"-"`
 
-	// SetEntries - a list of key-value pairs to set in redis
-	SetEntries []*Set `json:"entries,omitempty"`
+	// Entries - a list of entries to set in redis
+	Entries *Entries `json:"entries"`
+}
 
-	// HSetEntries - a list of key-value pairs to set in redis hashes
-	HSetEntries []*HSet `json:"hentries,omitempty"`
+// Entries contains a list of HSet and Set entries to set in redis.
+type Entries struct {
+	HSet []*HSet `json:"hset,omitempty"`
+	Set  []*Set  `json:"set,omitempty"`
 }
 
 // Set Represents a key-value pair to set in redis.
