@@ -70,34 +70,61 @@ func (r *SeedComponent) seed(ctx context.Context) error {
 		return err
 	}
 
-	err = client.FlushAll(ctx).Err()
-	if err != nil {
+	if err = client.FlushAll(ctx).Err(); err != nil {
 		return err
 	}
 
-	for _, hashData := range r.config.Data {
-		var count int
-		err = client.HSet(ctx, hashData.Key, hashData.Fields).Err()
+	if err = r.setEntries(ctx, err, client); err != nil {
+		return err
+	}
+
+	if err = r.HashSetEntries(ctx, err, client); err != nil {
+		return err
+	}
+	r.logInsertions()
+
+	return nil
+}
+
+func (r *SeedComponent) setEntries(ctx context.Context, err error, client *redis.Client) error {
+	for _, entry := range r.config.Entries {
+		err = client.Set(ctx, entry.Key, entry.Value, entry.TTL*time.Second).Err()
 
 		if err != nil {
 			return err
 		}
-		if hashData.TTL > 0 {
-			err = client.Expire(ctx, hashData.Key, time.Duration(hashData.TTL)*time.Second).Err()
+	}
+	return nil
+}
+
+func (r *SeedComponent) HashSetEntries(ctx context.Context, err error, client *redis.Client) error {
+	for _, hEntry := range r.config.HEntries {
+		err = client.HSet(ctx, hEntry.Key, hEntry.Values).Err()
+
+		if err != nil {
+			return err
+		}
+		if hEntry.TTL > 0 {
+			err = client.Expire(ctx, hEntry.Key, hEntry.TTL*time.Second).Err()
 			if err != nil {
 				return err
 			}
 		}
-		count = len(hashData.Fields)
-
-		r.writer.WriteString(fmt.Sprintf(
-			"inserted %s fields to %s",
-			r.writer.Color.Green(strconv.Itoa(count)),
-			r.writer.Color.Green(hashData.Key),
-		))
 	}
-
 	return nil
+}
+
+func (r *SeedComponent) logInsertions() {
+	count := len(r.config.Entries)
+	hashedCount := len(r.config.HEntries)
+
+	r.writer.WriteString(fmt.Sprintf(
+		"inserted %s fields to %s and %s fields to %s",
+		r.writer.Color.Green(strconv.Itoa(count)),
+		r.writer.Color.Green("Entries"),
+		r.writer.Color.Green(strconv.Itoa(hashedCount)),
+		r.writer.Color.Green("Hashed Entries"),
+	))
 }
 
 func (r *SeedComponent) clientProvider() (*redis.Client, error) {

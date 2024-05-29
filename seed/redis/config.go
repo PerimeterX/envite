@@ -4,7 +4,10 @@
 
 package redis
 
-import "github.com/go-redis/redis/v8"
+import (
+	"github.com/go-redis/redis/v8"
+	"time"
+)
 
 // SeedConfig represents the configuration for the redis seed component.
 type SeedConfig struct {
@@ -16,18 +19,23 @@ type SeedConfig struct {
 	// if both ClientProvider and Address are provided, ClientProvider is used.
 	ClientProvider func() (*redis.Client, error) `json:"-"`
 
-	// Data - a list of objects, each represents a redis key and its data
-	Data []*SeedData `json:"data,omitempty"`
+	// Entries - a list of key-value pairs to set in redis
+	Entries []*Set `json:"entries,omitempty"`
+
+	// HEntries - a list of key-value pairs to set in redis hashes
+	HEntries []*HSet `json:"hentries,omitempty"`
 }
 
-// SeedData represents data for a redis hash.
-type SeedData struct {
-	// Key - the name of the redis key
-	Key string `json:"key,omitempty"`
+// Set Represents a key-value pair to set in redis.
+type Set struct {
+	Key   string        `json:"key,omitempty"`
+	Value string        `json:"value"`
+	TTL   time.Duration `json:"ttl"`
+}
 
-	// Fields - a map of field names and their values to insert using the redis HSet function:
-	Fields []string `json:"fields,omitempty"`
-
-	// TTL - the time to live for the key in seconds
-	TTL int `json:"ttl,omitempty"`
+// HSet Represents a key-value pair to set in a redis hash.
+type HSet struct {
+	Key    string            `json:"key"`
+	Values map[string]string `json:"values"`
+	TTL    time.Duration     `json:"ttl"`
 }
