@@ -86,7 +86,7 @@ func (r *SeedComponent) seed(ctx context.Context) error {
 }
 
 func (r *SeedComponent) setEntries(ctx context.Context, err error, client *redis.Client) error {
-	for _, entry := range r.config.Entries {
+	for _, entry := range r.config.SetEntries {
 		err = client.Set(ctx, entry.Key, entry.Value, entry.TTL).Err()
 
 		if err != nil {
@@ -97,7 +97,7 @@ func (r *SeedComponent) setEntries(ctx context.Context, err error, client *redis
 }
 
 func (r *SeedComponent) hashSetEntries(ctx context.Context, err error, client *redis.Client) error {
-	for _, hEntry := range r.config.HEntries {
+	for _, hEntry := range r.config.HSetEntries {
 		err = client.HSet(ctx, hEntry.Key, hEntry.Values).Err()
 
 		if err != nil {
@@ -114,8 +114,8 @@ func (r *SeedComponent) hashSetEntries(ctx context.Context, err error, client *r
 }
 
 func (r *SeedComponent) logInsertions() {
-	count := len(r.config.Entries)
-	hashedCount := len(r.config.HEntries)
+	count := len(r.config.SetEntries)
+	hashedCount := len(r.config.HSetEntries)
 
 	r.writer.WriteString(fmt.Sprintf(
 		"inserted %s fields to %s and %s fields to %s",
