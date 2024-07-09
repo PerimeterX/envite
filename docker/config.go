@@ -9,6 +9,7 @@ import (
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/blkiodev"
 	"github.com/docker/docker/api/types/container"
+	"github.com/docker/docker/api/types/image"
 	"github.com/docker/docker/api/types/mount"
 	"github.com/docker/docker/api/types/network"
 	"github.com/docker/docker/api/types/strslice"
@@ -642,8 +643,8 @@ func (c Config) initialize(network *Network, imageCloneTag string) (*runConfig, 
 	return result, nil
 }
 
-func (c Config) imagePullOptions() (types.ImagePullOptions, error) {
-	result := types.ImagePullOptions{}
+func (c Config) imagePullOptions() (image.PullOptions, error) {
+	result := image.PullOptions{}
 
 	if c.ImagePullOptions != nil {
 		var auth string
@@ -651,7 +652,7 @@ func (c Config) imagePullOptions() (types.ImagePullOptions, error) {
 			var err error
 			auth, err = c.ImagePullOptions.RegistryAuthFunc()
 			if err != nil {
-				return types.ImagePullOptions{}, err
+				return image.PullOptions{}, err
 			}
 		} else {
 			auth = c.ImagePullOptions.RegistryAuth

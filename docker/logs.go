@@ -7,7 +7,7 @@ package docker
 import (
 	"bufio"
 	"context"
-	"github.com/docker/docker/api/types"
+	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/client"
 	"github.com/docker/docker/pkg/stdcopy"
 	"strings"
@@ -18,7 +18,7 @@ type logHandler func(timestamp time.Time, text string, stream stdcopy.StdType) (
 
 // followLogs attaches to container's output
 func followLogs(ctx context.Context, cli *client.Client, id string, handler logHandler) error {
-	containerReader, err := cli.ContainerLogs(ctx, id, types.ContainerLogsOptions{
+	containerReader, err := cli.ContainerLogs(ctx, id, container.LogsOptions{
 		ShowStdout: true,
 		ShowStderr: true,
 		Timestamps: true,

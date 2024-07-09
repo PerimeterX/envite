@@ -12,6 +12,7 @@ import (
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/filters"
+	"github.com/docker/docker/api/types/image"
 	"github.com/docker/docker/client"
 	"github.com/docker/docker/errdefs"
 	"github.com/docker/docker/pkg/jsonmessage"
@@ -204,7 +205,7 @@ func (c *Component) startContainer(ctx context.Context) (string, error) {
 		id = cont.ID
 	}
 
-	err = c.cli.ContainerStart(context.Background(), id, types.ContainerStartOptions{})
+	err = c.cli.ContainerStart(context.Background(), id, container.StartOptions{})
 	if err != nil {
 		return "", err
 	}
@@ -231,7 +232,7 @@ func (c *Component) Stop(ctx context.Context) error {
 		return err
 	}
 
-	err = c.cli.ContainerRemove(ctx, cont.ID, types.ContainerRemoveOptions{Force: true})
+	err = c.cli.ContainerRemove(ctx, cont.ID, container.RemoveOptions{Force: true})
 	if err != nil && !errdefs.IsNotFound(err) && !errdefs.IsConflict(err) {
 		return err
 	}
@@ -253,7 +254,7 @@ func (c *Component) Cleanup(ctx context.Context) error {
 }
 
 func (c *Component) removeImage(ctx context.Context) error {
-	_, err := c.cli.ImageRemove(ctx, c.imageCloneTag, types.ImageRemoveOptions{})
+	_, err := c.cli.ImageRemove(ctx, c.imageCloneTag, image.RemoveOptions{})
 	if err != nil {
 		return err
 	}
@@ -263,7 +264,7 @@ func (c *Component) removeImage(ctx context.Context) error {
 		return nil
 	}
 
-	_, err = c.cli.ImageRemove(ctx, c.config.Image, types.ImageRemoveOptions{})
+	_, err = c.cli.ImageRemove(ctx, c.config.Image, image.RemoveOptions{})
 	if err != nil && !errdefs.IsNotFound(err) {
 		return err
 	}
@@ -351,7 +352,7 @@ func (c *Component) Exec(ctx context.Context, cmd []string) (int, error) {
 }
 
 func (c *Component) findContainer(ctx context.Context) (*types.Container, error) {
-	containers, err := c.cli.ContainerList(ctx, types.ContainerListOptions{
+	containers, err := c.cli.ContainerList(ctx, container.ListOptions{
 		All:     true,
 		Filters: filters.NewArgs(filters.Arg("name", c.containerName)),
 	})

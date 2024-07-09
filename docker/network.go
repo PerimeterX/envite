@@ -168,9 +168,8 @@ func (n *Network) delete(ctx context.Context, c *Component) error {
 }
 
 func createNetworkIfNotExist(cli *client.Client, name, driver string) (string, error) {
-	res, err := cli.NetworkCreate(context.Background(), name, types.NetworkCreate{
-		CheckDuplicate: true,
-		Driver:         driver,
+	res, err := cli.NetworkCreate(context.Background(), name, network.CreateOptions{
+		Driver: driver,
 	})
 	if err != nil {
 		if !strings.Contains(err.Error(), "already exists") {
