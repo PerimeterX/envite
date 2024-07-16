@@ -12,14 +12,14 @@ type SeedConfig struct {
 	Setup string `json:"-"`
 
 	// Data - a list of objects, each represents a single postgres table and its data
-	Data []*SeedCollectionData `json:"data,omitempty"`
+	Data []*SeedTableData `json:"data,omitempty"`
 }
 
-// SeedCollectionData represents data for a Postgres table.
-type SeedCollectionData struct {
-	// Table - the name of the target postgres table
-	Table string `json:"collection,omitempty"`
+// SeedTableData represents data for a Postgres table.
+type SeedTableData struct {
+	// TableName - the name of the target postgres table
+	TableName string `json:"table,omitempty"`
 
 	// Rows - a list of rows to insert using the postgres Exec function (a `column` tag is required for each field):
-	Rows []any `json:"documents,omitempty"`
+	Rows []any `json:"rows,omitempty"`
 }

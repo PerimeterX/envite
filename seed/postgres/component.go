@@ -75,14 +75,14 @@ func (m *SeedComponent) Seed() error {
 		return err
 	}
 
-	for _, collection := range m.config.Data {
+	for _, table := range m.config.Data {
 
-		if _, err = client.Exec(fmt.Sprintf("DELETE FROM %s", collection.Table)); err != nil {
+		if _, err = client.Exec(fmt.Sprintf("DELETE FROM %s", table.TableName)); err != nil {
 			return err
 		}
 
-		for _, row := range collection.Rows {
-			sql, values := generateInsertSQL(collection.Table, row)
+		for _, row := range table.Rows {
+			sql, values := generateInsertSQL(table.TableName, row)
 			_, err := client.Exec(sql, values...)
 			if err != nil {
 				return err
@@ -92,8 +92,8 @@ func (m *SeedComponent) Seed() error {
 		if m.writer != nil {
 			m.writer.WriteString(fmt.Sprintf(
 				"inserted %s rows to %s",
-				m.writer.Color.Green(strconv.Itoa(len(collection.Rows))),
-				m.writer.Color.Cyan(collection.Table),
+				m.writer.Color.Green(strconv.Itoa(len(table.Rows))),
+				m.writer.Color.Cyan(table.TableName),
 			))
 		}
 	}
