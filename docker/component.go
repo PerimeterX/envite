@@ -255,7 +255,7 @@ func (c *Component) Cleanup(ctx context.Context) error {
 
 func (c *Component) removeImage(ctx context.Context) error {
 	_, err := c.cli.ImageRemove(ctx, c.imageCloneTag, image.RemoveOptions{})
-	if err != nil {
+	if err != nil && !strings.Contains(err.Error(), "reference does not exist") {
 		return err
 	}
 
