@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.0.9](https://github.com/PerimeterX/envite/compare/v0.0.8...v0.0.9)
+
+### Fixed
+
+- Cleanup phase failed when using the same image for multiple components due to a failure in removing the image  
+more than once. To fix this - ignored that specific issue "reference does not exist" when that error is returned   
+from the docker remove request
+
 ## [0.0.8](https://github.com/PerimeterX/envite/compare/v0.0.7...v0.0.8)
 
 ### Added
