@@ -8,7 +8,6 @@ import (
 	"context"
 	_ "embed"
 	"fmt"
-	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/network"
 	"github.com/docker/docker/client"
@@ -62,7 +61,7 @@ func (n *Network) NewComponent(config Config) (*Component, error) {
 }
 
 func newClosedNetwork(cli *client.Client, envID, networkIdentifier string) (*Network, error) {
-	networks, err := cli.NetworkList(context.Background(), types.NetworkListOptions{})
+	networks, err := cli.NetworkList(context.Background(), network.ListOptions{})
 	if err != nil {
 		return nil, err
 	}
@@ -182,13 +181,14 @@ func createNetworkIfNotExist(cli *client.Client, name, driver string) (string, e
 	return res.ID, nil
 }
 
-func findNetwork(networks []types.NetworkResource, identifier string) (types.NetworkResource, error) {
+func findNetwork(networks []network.Summary, identifier string) (network.Inspect, error) {
+	fmt.Printf("networks: %+v\n", networks)
 	for _, current := range networks {
 		if current.ID == identifier || current.Name == identifier {
 			return current, nil
 		}
 	}
-	return types.NetworkResource{}, ErrNetworkNotExist{network: identifier}
+	return network.Inspect{}, ErrNetworkNotExist{network: identifier}
 }
 
 //go:embed setup-needed.txt
