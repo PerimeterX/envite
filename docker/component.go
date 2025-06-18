@@ -9,6 +9,12 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"math"
+	"strings"
+	"sync"
+	"sync/atomic"
+	"time"
+
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/filters"
@@ -18,11 +24,6 @@ import (
 	"github.com/docker/docker/pkg/jsonmessage"
 	"github.com/docker/docker/pkg/stdcopy"
 	"github.com/perimeterx/envite"
-	"math"
-	"strings"
-	"sync"
-	"sync/atomic"
-	"time"
 )
 
 // ComponentType is the type identifier for the Docker component.
@@ -170,12 +171,20 @@ func (c *Component) pullImage(ctx context.Context) error {
 }
 
 func (c *Component) Start(ctx context.Context) error {
+	runtimeInfo, err := GetRuntimeInfo()
+	if err != nil {
+		return err
+	}
+
 	id, err := c.startContainer(ctx)
 	if err != nil {
 		return err
 	}
 
 	c.monitorStartingStatus(id, true)
+	if runtimeInfo.NetworkLatency > 0 {
+		time.Sleep(runtimeInfo.NetworkLatency)
+	}
 	return nil
 }
 
