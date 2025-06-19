@@ -24,6 +24,12 @@ var runtimeInfos = []*RuntimeInfo{
 		NetworkLatency:   time.Second * 3,
 	},
 	{
+		Runtime:          "Colima",
+		SocketPath:       "~/.colima/docker.sock",
+		InternalHostname: "host.lima.internal",
+		NetworkLatency:   time.Second * 3,
+	},
+	{
 		Runtime:          "Podman",
 		SocketPath:       "~/.podman/podman.sock",
 		InternalHostname: "host.containers.internal",
@@ -116,8 +122,12 @@ func detectRuntime() (*RuntimeInfo, error) {
 			}
 		}
 
-		// If no match, return fallback to Docker Desktop
-		return runtimeInfos[0], nil
+		// If no match, assume default behavior
+		return &RuntimeInfo{
+			Runtime:          "Unknown",
+			SocketPath:       dockerHost,
+			InternalHostname: "host.docker.internal",
+		}, nil
 	}
 
 	// Try all known runtimes
