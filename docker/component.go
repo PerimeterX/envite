@@ -34,6 +34,7 @@ type Component struct {
 	lock             sync.Mutex
 	envID            string
 	cli              *client.Client
+	runtimeInfo      *RuntimeInfo
 	config           Config
 	runConfig        *runConfig
 	network          *Network
@@ -49,6 +50,7 @@ type Component struct {
 // docker components must be instantiated via a Network.
 func newComponent(
 	cli *client.Client,
+	runtimeInfo *RuntimeInfo,
 	envID string,
 	network *Network,
 	config Config,
@@ -64,6 +66,7 @@ func newComponent(
 
 	c := &Component{
 		cli:           cli,
+		runtimeInfo:   runtimeInfo,
 		config:        config,
 		envID:         envID,
 		runConfig:     runConf,
@@ -171,19 +174,14 @@ func (c *Component) pullImage(ctx context.Context) error {
 }
 
 func (c *Component) Start(ctx context.Context) error {
-	runtimeInfo, err := GetRuntimeInfo()
-	if err != nil {
-		return err
-	}
-
 	id, err := c.startContainer(ctx)
 	if err != nil {
 		return err
 	}
 
 	c.monitorStartingStatus(id, true)
-	if runtimeInfo.NetworkLatency > 0 {
-		time.Sleep(runtimeInfo.NetworkLatency)
+	if c.runtimeInfo.NetworkLatency > 0 {
+		time.Sleep(c.runtimeInfo.NetworkLatency)
 	}
 	return nil
 }

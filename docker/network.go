@@ -29,6 +29,7 @@ import (
 //	component, err := network.NewComponent(dockerComponentConfig)
 type Network struct {
 	client       *client.Client
+	runtimeInfo  *RuntimeInfo
 	envID        string
 	ID           string
 	lock         sync.Mutex
@@ -45,13 +46,18 @@ type Network struct {
 //   - On linux, it will create a network with mode "host" and attach new components to it.
 //   - On other types of OS, it will create a network in mode "bridge" and expose ports for all components.
 func NewNetwork(cli *client.Client, networkID, envID string) (*Network, error) {
+	runtimeInfo, err := ExtractRuntimeInfo(context.Background(), cli)
+	if err != nil {
+		return nil, err
+	}
+
 	if networkID != "" {
-		return newClosedNetwork(cli, envID, networkID)
+		return newClosedNetwork(cli, envID, networkID, runtimeInfo)
 	}
 	if runtime.GOOS == "linux" {
-		return newOpenLinuxNetwork(cli, envID)
+		return newOpenLinuxNetwork(cli, envID, runtimeInfo)
 	}
-	return newOpenNetwork(cli, envID)
+	return newOpenNetwork(cli, envID, runtimeInfo)
 }
 
 // NewComponent creates a new Docker component within the network.
@@ -59,10 +65,10 @@ func (n *Network) NewComponent(config Config) (*Component, error) {
 	if n.OnNewComponent != nil {
 		n.OnNewComponent(&config)
 	}
-	return newComponent(n.client, n.envID, n, config)
+	return newComponent(n.client, n.runtimeInfo, n.envID, n, config)
 }
 
-func newClosedNetwork(cli *client.Client, envID, networkIdentifier string) (*Network, error) {
+func newClosedNetwork(cli *client.Client, envID, networkIdentifier string, runtimeInfo *RuntimeInfo) (*Network, error) {
 	networks, err := cli.NetworkList(context.Background(), types.NetworkListOptions{})
 	if err != nil {
 		return nil, err
@@ -75,6 +81,7 @@ func newClosedNetwork(cli *client.Client, envID, networkIdentifier string) (*Net
 
 	return &Network{
 		client:       cli,
+		runtimeInfo:  runtimeInfo,
 		envID:        envID,
 		shouldDelete: false,
 		ID:           nw.ID,
@@ -88,7 +95,7 @@ func newClosedNetwork(cli *client.Client, envID, networkIdentifier string) (*Net
 	}, nil
 }
 
-func newOpenLinuxNetwork(cli *client.Client, envID string) (*Network, error) {
+func newOpenLinuxNetwork(cli *client.Client, envID string, runtimeInfo *RuntimeInfo) (*Network, error) {
 	id, err := createNetworkIfNotExist(cli, envID, "host")
 	if err != nil {
 		return nil, err
@@ -96,6 +103,7 @@ func newOpenLinuxNetwork(cli *client.Client, envID string) (*Network, error) {
 
 	return &Network{
 		client:       cli,
+		runtimeInfo:  runtimeInfo,
 		envID:        envID,
 		shouldDelete: true,
 		ID:           id,
@@ -109,13 +117,8 @@ func newOpenLinuxNetwork(cli *client.Client, envID string) (*Network, error) {
 	}, nil
 }
 
-func newOpenNetwork(cli *client.Client, envID string) (*Network, error) {
-	runtimeInfo, err := GetRuntimeInfo()
-	if err != nil {
-		return nil, err
-	}
-
-	err = validateHostsFile(runtimeInfo)
+func newOpenNetwork(cli *client.Client, envID string, runtimeInfo *RuntimeInfo) (*Network, error) {
+	err := validateHostsFile(runtimeInfo)
 	if err != nil {
 		return nil, err
 	}
@@ -127,6 +130,7 @@ func newOpenNetwork(cli *client.Client, envID string) (*Network, error) {
 
 	return &Network{
 		client:       cli,
+		runtimeInfo:  runtimeInfo,
 		envID:        envID,
 		shouldDelete: true,
 		ID:           id,
