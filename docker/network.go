@@ -48,7 +48,7 @@ type Network struct {
 func NewNetwork(cli *client.Client, networkID, envID string) (*Network, error) {
 	runtimeInfo, err := ExtractRuntimeInfo(context.Background(), cli)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to extract runtime info: %w", err)
 	}
 
 	if networkID != "" {
@@ -71,12 +71,12 @@ func (n *Network) NewComponent(config Config) (*Component, error) {
 func newClosedNetwork(cli *client.Client, envID, networkIdentifier string, runtimeInfo *RuntimeInfo) (*Network, error) {
 	networks, err := cli.NetworkList(context.Background(), types.NetworkListOptions{})
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to list networks: %w", err)
 	}
 
 	nw, err := findNetwork(networks, networkIdentifier)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to find network: %w", err)
 	}
 
 	return &Network{
@@ -98,7 +98,7 @@ func newClosedNetwork(cli *client.Client, envID, networkIdentifier string, runti
 func newOpenLinuxNetwork(cli *client.Client, envID string, runtimeInfo *RuntimeInfo) (*Network, error) {
 	id, err := createNetworkIfNotExist(cli, envID, "host")
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to create network: %w", err)
 	}
 
 	return &Network{
@@ -120,12 +120,12 @@ func newOpenLinuxNetwork(cli *client.Client, envID string, runtimeInfo *RuntimeI
 func newOpenNetwork(cli *client.Client, envID string, runtimeInfo *RuntimeInfo) (*Network, error) {
 	err := validateHostsFile(runtimeInfo)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to validate hosts file: %w", err)
 	}
 
 	id, err := createNetworkIfNotExist(cli, envID, "bridge")
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to create network: %w", err)
 	}
 
 	return &Network{
@@ -183,7 +183,7 @@ func createNetworkIfNotExist(cli *client.Client, name, driver string) (string, e
 	})
 	if err != nil {
 		if !strings.Contains(err.Error(), "already exists") {
-			return "", err
+			return "", fmt.Errorf("failed to create network: %w", err)
 		}
 
 		return name, nil
@@ -235,12 +235,12 @@ func validateHostsFile(runtimeInfo *RuntimeInfo) error {
 func isHostsFileValid(runtimeInfo *RuntimeInfo) (bool, error) {
 	data, err := os.ReadFile("/etc/hosts")
 	if err != nil {
-		return false, err
+		return false, fmt.Errorf("failed to read hosts file: %w", err)
 	}
 
 	hostsEntryRE, err := regexp.Compile(fmt.Sprintf(`^\s*127\.0\.0\.1\s+%s\s*$`, strings.ReplaceAll(runtimeInfo.InternalHostname, ".", "\\.")))
 	if err != nil {
-		return false, err
+		return false, fmt.Errorf("failed to compile hosts entry regex: %w", err)
 	}
 
 	lines := strings.Split(string(data), "\n")

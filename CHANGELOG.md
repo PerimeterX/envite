@@ -5,6 +5,24 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.0.11](https://github.com/PerimeterX/envite/compare/v0.0.10...v0.0.11)
+
+### Added
+
+- Added docker runtime awareness with support for the following:
+  - Docker Desktop
+  - Colima (with 3-second network latency)
+  - Podman
+  - Rancher Desktop
+  - Lima
+  - OrbStack
+  - Minikube
+  - ContainerD
+  - Finch
+- `ExtractRuntimeInfo` function to detect runtime type from Docker client info
+- Runtime-specific internal hostname mapping (e.g., `host.docker.internal`, `host.lima.internal`)
+- Network latency configuration for runtimes that require startup delays
+
 ## [0.0.10](https://github.com/PerimeterX/envite/compare/v0.0.9...v0.0.10)
 
 ### Fixed

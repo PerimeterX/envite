@@ -141,7 +141,7 @@ func (r *SeedComponent) clientProvider() (*redis.Client, error) {
 
 	options, err := redis.ParseURL(r.config.Address)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to parse redis address: %w", err)
 	}
 
 	return redis.NewClient(options), nil

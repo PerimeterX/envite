@@ -162,7 +162,7 @@ func extractComponentType(err error, data []byte) (string, error) {
 	}
 	err = json.Unmarshal(data, &t)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("could not unmarshal component type: %w", err)
 	}
 
 	return t.Type, nil

@@ -2,6 +2,7 @@ package docker
 
 import (
 	"context"
+	"fmt"
 	"strings"
 	"time"
 
@@ -22,7 +23,7 @@ type RuntimeInfo struct {
 func ExtractRuntimeInfo(ctx context.Context, cli *client.Client) (*RuntimeInfo, error) {
 	info, err := cli.Info(ctx)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to get docker info: %w", err)
 	}
 
 	name := strings.ToLower(info.Name)

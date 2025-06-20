@@ -58,7 +58,7 @@ func newComponent(
 	imageCloneTag := fmt.Sprintf("%s_%s", config.Image, envID)
 	runConf, err := config.initialize(network, imageCloneTag)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to initialize component config: %w", err)
 	}
 
 	containerName := fmt.Sprintf("%s_%s", envID, config.Name)
@@ -202,11 +202,11 @@ func (c *Component) startContainer(ctx context.Context) (string, error) {
 	if err == nil {
 		id = res.ID
 	} else if !errdefs.IsConflict(err) {
-		return "", err
+		return "", fmt.Errorf("failed to create container: %w", err)
 	} else {
 		cont, err := c.findContainer(ctx)
 		if err != nil {
-			return "", err
+			return "", fmt.Errorf("failed to find container: %w", err)
 		}
 
 		id = cont.ID
@@ -214,7 +214,7 @@ func (c *Component) startContainer(ctx context.Context) (string, error) {
 
 	err = c.cli.ContainerStart(context.Background(), id, container.StartOptions{})
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("failed to start container: %w", err)
 	}
 
 	go c.writeLogs(id)
@@ -286,7 +286,7 @@ func (c *Component) Status(context.Context) (envite.ComponentStatus, error) {
 		// check if container stopped
 		cont, err := c.findContainer(context.Background())
 		if err != nil {
-			return "", err
+			return "", fmt.Errorf("failed to find container: %w", err)
 		}
 
 		if cont == nil || cont.State != "running" {
@@ -323,7 +323,7 @@ func (c *Component) Config() any {
 func (c *Component) Exec(ctx context.Context, cmd []string) (int, error) {
 	cont, err := c.findContainer(ctx)
 	if err != nil {
-		return 0, err
+		return 0, fmt.Errorf("failed to find container: %w", err)
 	}
 
 	c.Writer().WriteString(c.Writer().Color.Cyan(fmt.Sprintf("executing: %s", strings.Join(cmd, " "))))
@@ -334,12 +334,12 @@ func (c *Component) Exec(ctx context.Context, cmd []string) (int, error) {
 		AttachStderr: true,
 	})
 	if err != nil {
-		return 0, err
+		return 0, fmt.Errorf("failed to create exec: %w", err)
 	}
 
 	hijack, err := c.cli.ContainerExecAttach(ctx, response.ID, types.ExecStartCheck{})
 	if err != nil {
-		return 0, err
+		return 0, fmt.Errorf("failed to attach exec: %w", err)
 	}
 
 	scanner := bufio.NewScanner(hijack.Reader)
@@ -351,7 +351,7 @@ func (c *Component) Exec(ctx context.Context, cmd []string) (int, error) {
 
 	execResp, err := c.cli.ContainerExecInspect(ctx, response.ID)
 	if err != nil {
-		return 0, err
+		return 0, fmt.Errorf("failed to inspect exec: %w", err)
 	}
 
 	c.Writer().WriteString(c.Writer().Color.Cyan(fmt.Sprintf("exit code: %d", execResp.ExitCode)))
@@ -364,7 +364,7 @@ func (c *Component) findContainer(ctx context.Context) (*types.Container, error)
 		Filters: filters.NewArgs(filters.Arg("name", c.containerName)),
 	})
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to list containers: %w", err)
 	}
 
 	for _, co := range containers {

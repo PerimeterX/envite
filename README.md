@@ -35,6 +35,7 @@ A framework to manage development and testing environments.
   - [Flags and Options](#flags-and-options)
   - [Adding Custom Components](#adding-custom-components)
 * [Key Elements of ENVITE](#key-elements-of-envite)
+* [Runtime Awareness](#runtime-awareness)
 * [Local Development](#local-development)
 * [Contact and Contribute](#contact-and-contribute)
 * [ENVITE Logo](#envite-logo)
@@ -333,6 +334,12 @@ functional environment.
 * `Component`: Represents a specific part of the environment, such as a Docker container or a custom component.
 * `Component` Graph: Organizes components into layers and defines their relationships.
 * `Server`: Allow serving a UI to manage the environment.
+
+## Runtime Awareness
+
+ENVITE automatically detects and adapts to different Docker-compatible runtimes (Docker Desktop, Colima, Podman, Rancher Desktop, Lima, OrbStack, Minikube, ContainerD, and Finch). This runtime awareness allows ENVITE to handle runtime-specific behaviors automatically.
+
+> Colima has some latency when attaching networking stack of new containers. This may lead to issue when adding log message based waiters. As a workaround, ENVITE adds a 3-second wait time after creating containers, to allow colima to finalize networking. This may not work perfectly as it depends on the time it takes colima to complete.
 
 ## Local Development
 

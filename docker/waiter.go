@@ -64,7 +64,7 @@ func validateWaiter(w Waiter) (waiterFunc, error) {
 	case WaiterTypeRegex:
 		re, err := regexp.Compile(w.Regex)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("failed to compile regex: %w", err)
 		}
 
 		return func(ctx context.Context, cli *client.Client, containerID string, _ bool) error {
@@ -86,7 +86,7 @@ func validateWaiter(w Waiter) (waiterFunc, error) {
 	case WaiterTypeDuration:
 		d, err := time.ParseDuration(w.Duration)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("failed to parse duration: %w", err)
 		}
 
 		return func(_ context.Context, _ *client.Client, _ string, isNewContainer bool) error {

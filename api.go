@@ -76,13 +76,13 @@ type GetStatusResponseComponent struct {
 func buildComponentInfo(c Component) (map[string]any, error) {
 	data, err := json.Marshal(c.Config())
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to marshal component config: %w", err)
 	}
 
 	var result map[string]any
 	err = json.Unmarshal(data, &result)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to unmarshal component config: %w", err)
 	}
 
 	if result == nil {
