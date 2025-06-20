@@ -28,7 +28,7 @@ function ProductTour(props: ProductTourProps) {
                 friendly than manipulating components one by one.
                 <br />
                 <br />
-                When you apply state, envite takes care of the dependencies
+                When you apply state, ENVITE takes care of the dependencies
                 between components by loading them in the required order and
                 monitoring their status. It will also stop and re-run components
                 to your request.

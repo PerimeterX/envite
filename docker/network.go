@@ -8,16 +8,17 @@ import (
 	"context"
 	_ "embed"
 	"fmt"
-	"github.com/docker/docker/api/types"
-	"github.com/docker/docker/api/types/container"
-	"github.com/docker/docker/api/types/network"
-	"github.com/docker/docker/client"
-	"github.com/docker/go-connections/nat"
 	"os"
 	"regexp"
 	"runtime"
 	"strings"
 	"sync"
+
+	"github.com/docker/docker/api/types"
+	"github.com/docker/docker/api/types/container"
+	"github.com/docker/docker/api/types/network"
+	"github.com/docker/docker/client"
+	"github.com/docker/go-connections/nat"
 )
 
 // Network represents a Docker network.
@@ -28,6 +29,7 @@ import (
 //	component, err := network.NewComponent(dockerComponentConfig)
 type Network struct {
 	client       *client.Client
+	runtimeInfo  *RuntimeInfo
 	envID        string
 	ID           string
 	lock         sync.Mutex
@@ -44,13 +46,18 @@ type Network struct {
 //   - On linux, it will create a network with mode "host" and attach new components to it.
 //   - On other types of OS, it will create a network in mode "bridge" and expose ports for all components.
 func NewNetwork(cli *client.Client, networkID, envID string) (*Network, error) {
+	runtimeInfo, err := ExtractRuntimeInfo(context.Background(), cli)
+	if err != nil {
+		return nil, fmt.Errorf("failed to extract runtime info: %w", err)
+	}
+
 	if networkID != "" {
-		return newClosedNetwork(cli, envID, networkID)
+		return newClosedNetwork(cli, envID, networkID, runtimeInfo)
 	}
 	if runtime.GOOS == "linux" {
-		return newOpenLinuxNetwork(cli, envID)
+		return newOpenLinuxNetwork(cli, envID, runtimeInfo)
 	}
-	return newOpenNetwork(cli, envID)
+	return newOpenNetwork(cli, envID, runtimeInfo)
 }
 
 // NewComponent creates a new Docker component within the network.
@@ -58,22 +65,23 @@ func (n *Network) NewComponent(config Config) (*Component, error) {
 	if n.OnNewComponent != nil {
 		n.OnNewComponent(&config)
 	}
-	return newComponent(n.client, n.envID, n, config)
+	return newComponent(n.client, n.runtimeInfo, n.envID, n, config)
 }
 
-func newClosedNetwork(cli *client.Client, envID, networkIdentifier string) (*Network, error) {
+func newClosedNetwork(cli *client.Client, envID, networkIdentifier string, runtimeInfo *RuntimeInfo) (*Network, error) {
 	networks, err := cli.NetworkList(context.Background(), types.NetworkListOptions{})
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to list networks: %w", err)
 	}
 
 	nw, err := findNetwork(networks, networkIdentifier)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to find network: %w", err)
 	}
 
 	return &Network{
 		client:       cli,
+		runtimeInfo:  runtimeInfo,
 		envID:        envID,
 		shouldDelete: false,
 		ID:           nw.ID,
@@ -87,14 +95,15 @@ func newClosedNetwork(cli *client.Client, envID, networkIdentifier string) (*Net
 	}, nil
 }
 
-func newOpenLinuxNetwork(cli *client.Client, envID string) (*Network, error) {
+func newOpenLinuxNetwork(cli *client.Client, envID string, runtimeInfo *RuntimeInfo) (*Network, error) {
 	id, err := createNetworkIfNotExist(cli, envID, "host")
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to create network: %w", err)
 	}
 
 	return &Network{
 		client:       cli,
+		runtimeInfo:  runtimeInfo,
 		envID:        envID,
 		shouldDelete: true,
 		ID:           id,
@@ -108,19 +117,20 @@ func newOpenLinuxNetwork(cli *client.Client, envID string) (*Network, error) {
 	}, nil
 }
 
-func newOpenNetwork(cli *client.Client, envID string) (*Network, error) {
-	err := validateHostsFile()
+func newOpenNetwork(cli *client.Client, envID string, runtimeInfo *RuntimeInfo) (*Network, error) {
+	err := validateHostsFile(runtimeInfo)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to validate hosts file: %w", err)
 	}
 
 	id, err := createNetworkIfNotExist(cli, envID, "bridge")
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to create network: %w", err)
 	}
 
 	return &Network{
 		client:       cli,
+		runtimeInfo:  runtimeInfo,
 		envID:        envID,
 		shouldDelete: true,
 		ID:           id,
@@ -129,7 +139,7 @@ func newOpenNetwork(cli *client.Client, envID string) (*Network, error) {
 			runConfig.networkingConfig = &network.NetworkingConfig{
 				EndpointsConfig: map[string]*network.EndpointSettings{id: {NetworkID: id}},
 			}
-			runConfig.hostname = "host.docker.internal"
+			runConfig.hostname = runtimeInfo.InternalHostname
 			runConfig.containerConfig.ExposedPorts = nat.PortSet{}
 			runConfig.hostConfig.PortBindings = nat.PortMap{}
 			for _, port := range config.Ports {
@@ -173,7 +183,7 @@ func createNetworkIfNotExist(cli *client.Client, name, driver string) (string, e
 	})
 	if err != nil {
 		if !strings.Contains(err.Error(), "already exists") {
-			return "", err
+			return "", fmt.Errorf("failed to create network: %w", err)
 		}
 
 		return name, nil
@@ -198,8 +208,8 @@ var setupNeeded string
 var setupFinished string
 
 // validateHostsFile installs necessary steps to /etc/hosts if needed
-func validateHostsFile() error {
-	valid, err := isHostsFileValid()
+func validateHostsFile(runtimeInfo *RuntimeInfo) error {
+	valid, err := isHostsFileValid(runtimeInfo)
 	if err != nil {
 		return err
 	}
@@ -208,26 +218,29 @@ func validateHostsFile() error {
 		return nil
 	}
 
-	err = updateHostsFile()
+	err = updateHostsFile(runtimeInfo)
 	if err == nil {
-		fmt.Println(setupFinished)
+		fmt.Println(fmt.Sprintf(setupFinished, runtimeInfo.Runtime))
 		os.Exit(0)
 	}
 
 	if strings.Contains(err.Error(), "permission denied") {
-		fmt.Println(setupNeeded)
+		fmt.Println(fmt.Sprintf(setupNeeded, runtimeInfo.Runtime, runtimeInfo.InternalHostname))
 		os.Exit(1)
 	}
 
 	return err
 }
 
-var hostsEntryRE = regexp.MustCompile(`^\s*127\.0\.0\.1\s+host\.docker\.internal\s*$`)
-
-func isHostsFileValid() (bool, error) {
+func isHostsFileValid(runtimeInfo *RuntimeInfo) (bool, error) {
 	data, err := os.ReadFile("/etc/hosts")
 	if err != nil {
-		return false, err
+		return false, fmt.Errorf("failed to read hosts file: %w", err)
+	}
+
+	hostsEntryRE, err := regexp.Compile(fmt.Sprintf(`^\s*127\.0\.0\.1\s+%s\s*$`, strings.ReplaceAll(runtimeInfo.InternalHostname, ".", "\\.")))
+	if err != nil {
+		return false, fmt.Errorf("failed to compile hosts entry regex: %w", err)
 	}
 
 	lines := strings.Split(string(data), "\n")
@@ -240,13 +253,13 @@ func isHostsFileValid() (bool, error) {
 	return false, nil
 }
 
-func updateHostsFile() error {
+func updateHostsFile(runtimeInfo *RuntimeInfo) error {
 	f, err := os.OpenFile("/etc/hosts", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
 		return err
 	}
 
-	_, err = f.WriteString("\n# To allow envite to create open docker networks\n127.0.0.1 host.docker.internal\n# End of section\n")
+	_, err = f.WriteString(fmt.Sprintf("\n# To allow ENVITE to create open docker networks\n127.0.0.1 %s\n# End of section\n", runtimeInfo.InternalHostname))
 	if err != nil {
 		_ = f.Close()
 		return err

@@ -652,7 +652,7 @@ func (c Config) imagePullOptions() (image.PullOptions, error) {
 			var err error
 			auth, err = c.ImagePullOptions.RegistryAuthFunc()
 			if err != nil {
-				return image.PullOptions{}, err
+				return image.PullOptions{}, fmt.Errorf("failed to get registry auth: %w", err)
 			}
 		} else {
 			auth = c.ImagePullOptions.RegistryAuth

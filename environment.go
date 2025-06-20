@@ -60,7 +60,7 @@ func NewEnvironment(id string, componentGraph *ComponentGraph, options ...Option
 
 			err := component.AttachEnvironment(context.Background(), b, om.writer(componentID))
 			if err != nil {
-				return nil, err
+				return nil, fmt.Errorf("failed to attach environment to component %s: %w", componentID, err)
 			}
 
 			b.componentsByID[componentID] = component
@@ -216,7 +216,7 @@ func (b *Environment) Status(ctx context.Context) (GetStatusResponse, error) {
 
 			info, err := buildComponentInfo(component)
 			if err != nil {
-				return GetStatusResponse{}, err
+				return GetStatusResponse{}, fmt.Errorf("failed to build component info for %s: %w", id, err)
 			}
 
 			components = append(components, GetStatusResponseComponent{

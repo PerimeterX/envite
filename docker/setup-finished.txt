@@ -1,3 +1,3 @@
 Done ☑️
-Network features will now work properly for any envite environment.
+Network features will now work properly for any ENVITE environment with %s.
 You can now rerun the process WITHOUT sudo and continue normally.

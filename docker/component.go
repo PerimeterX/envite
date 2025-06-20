@@ -9,6 +9,12 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"math"
+	"strings"
+	"sync"
+	"sync/atomic"
+	"time"
+
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/filters"
@@ -18,11 +24,6 @@ import (
 	"github.com/docker/docker/pkg/jsonmessage"
 	"github.com/docker/docker/pkg/stdcopy"
 	"github.com/perimeterx/envite"
-	"math"
-	"strings"
-	"sync"
-	"sync/atomic"
-	"time"
 )
 
 // ComponentType is the type identifier for the Docker component.
@@ -33,6 +34,7 @@ type Component struct {
 	lock             sync.Mutex
 	envID            string
 	cli              *client.Client
+	runtimeInfo      *RuntimeInfo
 	config           Config
 	runConfig        *runConfig
 	network          *Network
@@ -48,6 +50,7 @@ type Component struct {
 // docker components must be instantiated via a Network.
 func newComponent(
 	cli *client.Client,
+	runtimeInfo *RuntimeInfo,
 	envID string,
 	network *Network,
 	config Config,
@@ -55,7 +58,7 @@ func newComponent(
 	imageCloneTag := fmt.Sprintf("%s_%s", config.Image, envID)
 	runConf, err := config.initialize(network, imageCloneTag)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to initialize component config: %w", err)
 	}
 
 	containerName := fmt.Sprintf("%s_%s", envID, config.Name)
@@ -63,6 +66,7 @@ func newComponent(
 
 	c := &Component{
 		cli:           cli,
+		runtimeInfo:   runtimeInfo,
 		config:        config,
 		envID:         envID,
 		runConfig:     runConf,
@@ -176,6 +180,9 @@ func (c *Component) Start(ctx context.Context) error {
 	}
 
 	c.monitorStartingStatus(id, true)
+	if c.runtimeInfo.NetworkLatency > 0 {
+		time.Sleep(c.runtimeInfo.NetworkLatency)
+	}
 	return nil
 }
 
@@ -195,11 +202,11 @@ func (c *Component) startContainer(ctx context.Context) (string, error) {
 	if err == nil {
 		id = res.ID
 	} else if !errdefs.IsConflict(err) {
-		return "", err
+		return "", fmt.Errorf("failed to create container: %w", err)
 	} else {
 		cont, err := c.findContainer(ctx)
 		if err != nil {
-			return "", err
+			return "", fmt.Errorf("failed to find container: %w", err)
 		}
 
 		id = cont.ID
@@ -207,7 +214,7 @@ func (c *Component) startContainer(ctx context.Context) (string, error) {
 
 	err = c.cli.ContainerStart(context.Background(), id, container.StartOptions{})
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("failed to start container: %w", err)
 	}
 
 	go c.writeLogs(id)
@@ -279,7 +286,7 @@ func (c *Component) Status(context.Context) (envite.ComponentStatus, error) {
 		// check if container stopped
 		cont, err := c.findContainer(context.Background())
 		if err != nil {
-			return "", err
+			return "", fmt.Errorf("failed to find container: %w", err)
 		}
 
 		if cont == nil || cont.State != "running" {
@@ -316,7 +323,7 @@ func (c *Component) Config() any {
 func (c *Component) Exec(ctx context.Context, cmd []string) (int, error) {
 	cont, err := c.findContainer(ctx)
 	if err != nil {
-		return 0, err
+		return 0, fmt.Errorf("failed to find container: %w", err)
 	}
 
 	c.Writer().WriteString(c.Writer().Color.Cyan(fmt.Sprintf("executing: %s", strings.Join(cmd, " "))))
@@ -327,12 +334,12 @@ func (c *Component) Exec(ctx context.Context, cmd []string) (int, error) {
 		AttachStderr: true,
 	})
 	if err != nil {
-		return 0, err
+		return 0, fmt.Errorf("failed to create exec: %w", err)
 	}
 
 	hijack, err := c.cli.ContainerExecAttach(ctx, response.ID, types.ExecStartCheck{})
 	if err != nil {
-		return 0, err
+		return 0, fmt.Errorf("failed to attach exec: %w", err)
 	}
 
 	scanner := bufio.NewScanner(hijack.Reader)
@@ -344,7 +351,7 @@ func (c *Component) Exec(ctx context.Context, cmd []string) (int, error) {
 
 	execResp, err := c.cli.ContainerExecInspect(ctx, response.ID)
 	if err != nil {
-		return 0, err
+		return 0, fmt.Errorf("failed to inspect exec: %w", err)
 	}
 
 	c.Writer().WriteString(c.Writer().Color.Cyan(fmt.Sprintf("exit code: %d", execResp.ExitCode)))
@@ -357,7 +364,7 @@ func (c *Component) findContainer(ctx context.Context) (*types.Container, error)
 		Filters: filters.NewArgs(filters.Arg("name", c.containerName)),
 	})
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to list containers: %w", err)
 	}
 
 	for _, co := range containers {
