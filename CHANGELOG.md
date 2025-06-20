@@ -22,6 +22,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `ExtractRuntimeInfo` function to detect runtime type from Docker client info
 - Runtime-specific internal hostname mapping (e.g., `host.docker.internal`, `host.lima.internal`)
 - Network latency configuration for runtimes that require startup delays
+- Improved error handling with error wrapping to provide better error messages
 
 ## [0.0.10](https://github.com/PerimeterX/envite/compare/v0.0.9...v0.0.10)
 
